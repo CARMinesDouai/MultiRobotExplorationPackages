@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $# -eq 0 ] ; then
+    echo "Usage:" $0 "tb1 tb2 ..."
+    exit 1
+fi
+
+
+robot_launch_file="multi_robot.launch"
+for robot_name in $@
+do
+    robot_launch_file="$robot_launch_file robot_name:=$robot_name"
+done
+
+PARAMS=()
+PARAMS+=( --tab -e "bash -c 'roslaunch $robot_launch_file ;exec bash'" )
+n=0 # for avoid name conflits of PharoHandle
+
+gnome-terminal --working-directory=`pwd` "${PARAMS[@]}"

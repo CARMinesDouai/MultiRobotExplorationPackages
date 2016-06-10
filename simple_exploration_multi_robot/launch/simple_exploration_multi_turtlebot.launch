@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!--param name="/use_sim_time" value="true"/-->
+  <arg name="robot_name"/>
+  <arg name="x"/>
+  <arg name="y"/>
+  <arg name="z"/>
+
+  <!--<include file="$(find kobuki_node)/launch/robot_with_tf.launch" >-->
+  <include file="$(find simple_exploration_multi_robot)/launch/robot_with_tf.launch" >
+    <arg name="robot_name" value="$(arg robot_name)"/>
+
+  </include>
+
+  <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node" >
+    <param name="frameid" value="$(arg robot_name)/laser"/>
+    <param name="min_ang" value="-1.9"/>
+    <param name="max_ang" value="1.9"/>
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster_tb2" args="0.110 0 0.02478 0 0 0 1 /$(arg robot_name)/base_link /$(arg robot_name)/laser 50" />
+
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <!-- <remap from="scan" to="/$(arg robot_name)/scan"/> -->
+    
+    <param name="base_frame" value="/$(arg robot_name)/base_link"/>
+    <param name="scan_frame" value="/$(arg robot_name)/scan"/>
+    <param name="map_frame" value="/$(arg robot_name)/map"/>
+    <param name="odom_frame" value="/$(arg robot_name)/odom"/>
+
+    <param name="particles" value="30"/>
+    
+    <param name="srr" value="0.1"/>
+    <param name="srt" value="0.2"/>
+    <param name="str" value="0.1"/>
+    <param name="stt" value="0.2"/>
+    
+    <param name="maxUrange" value="4.0"/>
+
+    <param name="xmin" value="-8.0"/>
+    <param name="ymin" value="-9.0"/>
+    <param name="xmax" value="8.0"/>
+    <param name="ymax" value="9.0"/>
+
+    <param name="delta" value="0.05"/>
+    <param name="map_update_interval" value="5.0"/>
+    <param name="temporalUpdate" value="2.0"/>
+
+    <param name="transform_publish_period" value="0.1"/>
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="base_scan" to="/$(arg robot_name)/scan"/>
+    <remap from="map" to="/$(arg robot_name)/map"/>
+    <!--remap from="scan" to="/$(arg robot_name)/scan"/-->
+    <remap from="odom" to="/$(arg robot_name)/odom"/>
+    <remap from="cmd_vel" to="/$(arg robot_name)/mobile_base/commands/velocity"/>
+    
+    <remap from="move_base_simple/goal" to="/$(arg robot_name)/move_base_simple/goal"/>
+    
+    <rosparam file="$(find simple_exploration_multi_robot)/yaml/costmap_common_turtlebot.yaml" command="load" ns="global_costmap"/> 
+    <rosparam file="$(find simple_exploration_multi_robot)/yaml/global_costmap.yaml" command="load" />
+    <rosparam file="$(find simple_exploration_multi_robot)/yaml/costmap_common_turtlebot.yaml" command="load" ns="local_costmap"/> 
+    <rosparam file="$(find simple_exploration_multi_robot)/yaml/local_costmap.yaml" command="load" />
+    <rosparam file="$(find simple_exploration_multi_robot)/yaml/trajectory_planner_turtlebot.yaml" command="load"/>
+  
+    <!--rosparam param="/$(arg robot_name)/move_base/global_costmap/global_frame"> $(arg global_cost_map_frame) </rosparam-->
+    <rosparam param="/$(arg robot_name)/move_base/global_costmap/global_frame"> "/tb2/map" </rosparam>
+    <rosparam param="/$(arg robot_name)/move_base/global_costmap/robot_base_frame"> "/tb2/base_link" </rosparam>
+    <rosparam param="/$(arg robot_name)/move_base/local_costmap/global_frame"> "/tb2/odom" </rosparam>
+
+  </node>
+  
+  <node pkg="pose_publisher" type="pose_publisher" name="pose_publisher" output="screen">
+ 	<!-- the frame where the robot pose and path will be exprese: ONLY odom or map -->
+        <param name="map_frame" value="/$(arg robot_name)/map" />
+        <!-- the output topics names, puting an empty name ("") mean topic will not be published (DO NOT EMPTY BOTH PLZ.!)-->
+        <param name="pose_topic_name"   value="/$(arg robot_name)/posegmapping" />
+        <param name="base_frame"        value="/$(arg robot_name)/base_link" />
+        <param name="publish_frequency" value="10.0" />
+  </node>
+
+  <node pkg="phrontier_exploration" type="headless" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
+    <param name="map_topic"      value="/$(arg robot_name)/costmap_for_exploration_global/costmap/costmap"/>
+    <param name="frontier_topic" value="/$(arg robot_name)/phrontier_global"/>
+    <param name="posegmapping"   value="/$(arg robot_name)/posegmapping"/>
+  </node>
+
+  <node pkg="turtlebot_teleop" type="turtlebot_teleop_joy" name="turtlebot_teleop_joystick">
+    <remap from="/$(arg robot_name)/turtlebot_teleop_joystick/cmd_vel" to="/$(arg robot_name)//mobile_base/commands/velocity"/>
+    <param name="scale_angular" value="1.5"/>
+    <param name="scale_linear"  value="0.5"/>
+    <param name="axis_deadman"  value="4"/>
+    <param name="axis_linear"   value="1"/>
+    <param name="axis_angular"  value="0"/>
+  </node>
+
+  <node pkg="joy" type="joy_node" name="joystick"/>
+
+<!--used to compute frontiers by   rosrun phrontier_exploration headless phrontier_explorationpackage_extract_frontiers -->
+  <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_for_exploration_global">
+
+    <!--rosparam file="$(find simple_exploration_multi_robot)/param/costmap_for_exploration_global_param.yaml" command="load"/-->
+    <rosparam ns="costmap" subst_value="true">
+      global_frame: /tb2/map
+      robot_base_frame: /tb2/base_link
+      update_frequency: 0.2
+      publish_frequency: 0.2
+      rolling_window: false
+      always_send_full_costmap: true
+
+      # Map management parameters
+      unknown_cost_value: 255
+      
+      robot_radius: 0.30
+      plugins: 
+        - {name: static, type: "costmap_2d::StaticLayer"}
+        - {name: inflation,        type: "costmap_2d::InflationLayer"}  
+      static:
+        #Can pull data from gmapping, map_server or a non-rolling costmap            
+        map_topic: /tb2/map_merging/map
+        subscribe_to_updates: true 
+      inflation:
+        inflation_radius: 0.30
+
+    </rosparam>
+    <param name="global_frame"     value= "$(arg robot_name)/map" />
+    <param name="robot_base_frame" value= "$(arg robot_name)/base_link" />
+    <param name="map_topic"        value= "$(arg robot_name)/map_merging/map" />
+
+    <!--rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/global_frame"> "/tb2/map" </rosparam>
+    <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/robot_base_frame"> "/tb2/base_link" </rosparam>
+    <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/static/map_topic"> "/tb2/map_topic" </rosparam-->
+  </node>
+  <node pkg="map_send" type="map_send" name="map_send" output="screen" >
+    <param name="ip"         	 value="10.1.16.73"/>
+    <param name="map_topic"  	 value="/$(arg robot_name)/map"/>
+    <param name="pose_topic" 	 value="/$(arg robot_name)/posegmapping"/>
+    <param name="x_initial"  	 value="0.0"/>
+    <param name="y_initial"      value="1.695"/>
+    <param name="compress_map"   value="true"/>
+  </node>
+  <node pkg="map_receive" type="map_receive" name="map_receive" output="screen" >
+    <rosparam param="robots_handler"> [10.1.16.75, 10.1.16.245, /tb1/map, /tb3/map, /tb1/posegmapping, /tb3/posegmapping]</rosparam>
+    <param name="map_is_compressed" value="true"/>
+  </node>
+
+  <node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" />
+  
+  <node pkg="rosbag" type="record" name="rosbag_robulab_pose_scan_odom_tf"
+    args="record -o $(find simple_exploration_multi_robot)/rosbags /$(arg robot_name)/move_base_simple/goal /$(arg robot_name)/posegmapping /tf" />
+
+      
+
+  <node pkg="map_merging" type="map_merging" name="map_merging" output="screen">
+    <param name="init_pose_x" value="0.0"/>
+    <param name="init_pose_y" value="1.7"/>
+    <param name="init_pose_z" value="0.0"/>
+  </node>
+
+  <param name="/tb1/map_merging/init_pose_x" value="0.0"/>
+  <param name="/tb1/map_merging/init_pose_y" value="0.0"/>
+  <param name="/tb1/map_merging/init_pose_z" value="0.0"/>
+  
+  <param name="/tb3/map_merging/init_pose_x" value="0.0"/>
+  <param name="/tb3/map_merging/init_pose_y" value="3.0"/>
+  <param name="/tb3/map_merging/init_pose_z" value="0.0"/>
+</launch>
+  
+ 

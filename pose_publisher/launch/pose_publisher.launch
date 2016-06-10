@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--[ Khelifa Baizid, Jul 2015 ]-->
+
+<launch>
+  <arg name="robot_name"/>
+  <node pkg="pose_publisher" type="pose_publisher" name="pose_publisher" output="screen">
+  	<!-- the frame where the robot pose and path will be exprese: ONLY odom or map -->
+        <param name="map_frame" value="$(arg robot_name)/map" />
+        <!-- the output topics names, puting an empty name ("") mean topic will not be published (DO NOT EMPTY BOTH PLZ.!)-->
+        <param name="pose_topic_name" value="$(arg robot_name)/posegmapping" />
+        <param name="base_frame" value="$(arg robot_name)/base_link" />
+        <param name="publish_frequency" value="100.0" />
+  </node>
+
+  <!--node pkg="rviz" type="rviz" name="rviz" output="screen"/-->   
+</launch>
+
+

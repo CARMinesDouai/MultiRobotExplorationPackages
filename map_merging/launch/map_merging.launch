@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node pkg="map_merging" type="map_merging" name="map_merging" output="screen">
+    <param name="init_pose_x" value="0.0"/>
+    <param name="init_pose_y" value="1.695"/>
+    <param name="init_pose_z" value="0.0"/>
+  </node>
+
+</launch>
+  
+  

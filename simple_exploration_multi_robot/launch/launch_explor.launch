@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+
+	<!--include file="$(find map_receive)/launch/map_receive.launch" output="screen">
+		<param name="map_is_compressed" value="false"/>
+	</include-->
+
+	<include file="$(find map_send)/launch/map_send.launch" output="screen">
+		<param name="compress_map"   value="false"/>
+	</include>
+        <arg name="map_file" default="$(find map_send)/data/high/k3.yaml"/>
+	<node pkg="map_server" type="map_server" name="map_server" args="$( arg map_file)" >
+	</node>
+ 
+</launch>

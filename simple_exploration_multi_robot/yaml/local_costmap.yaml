@@ -1,0 +1,15 @@
+local_costmap: 
+  map_type: costmap
+  global_frame: /odom
+  robot_base_frame: base_link
+  publish_frequency: 0.5
+  resolution: 0.025
+  static_map: false
+  rolling_window: true
+  width: 6.0
+  height: 6.0
+  origin_x: 0.0
+  origin_y: 0.0
+  inflation_radius: 0.6
+  observation_sources: base_scan
+  base_scan: {sensor_frame: laser, data_type: LaserScan, topic: /tb2/scan, marking: true, clearing: true}

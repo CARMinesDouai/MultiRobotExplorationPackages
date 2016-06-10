@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="robot_name"/> 
+  <arg name="robot_launch" value="$(env PWD)/simple_exploration_multi_turtlebot.launch"/>
+ 
+   <group ns="$(arg robot_name)">
+    <param name="tf_prefix" type="string" value="$(arg robot_name)" />
+    <include file="$(arg robot_launch)">
+      <arg name="robot_name" value="$(arg robot_name)"/>
+      <arg name="x" value="0.0"/>
+      <arg name="y" value="0.0"/>
+      <arg name="z" value="0.0"/>
+    </include>
+  </group>
+ 
+</launch>

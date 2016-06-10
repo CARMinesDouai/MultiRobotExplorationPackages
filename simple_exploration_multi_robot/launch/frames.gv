@@ -1,0 +1,18 @@
+digraph G {
+"tb2/base_link" -> "tb2/wheel_left_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 25.263 Hz\nMost recent transform: 1456396555.050 ( 0.059 sec old)\nBuffer length: 4.908 sec\n"];
+"tb2/base_footprint" -> "tb2/base_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/wheel_right_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 25.263 Hz\nMost recent transform: 1456396555.050 ( 0.059 sec old)\nBuffer length: 4.908 sec\n"];
+"tb2/odom" -> "tb2/base_footprint"[label="Broadcaster: /tb2/mobile_base_nodelet_manager\nAverage rate: 50.322 Hz\nMost recent transform: 1456396555.089 ( 0.019 sec old)\nBuffer length: 4.948 sec\n"];
+"tb2/map" -> "tb2/odom"[label="Broadcaster: /tb2/slam_gmapping\nAverage rate: 10.204 Hz\nMost recent transform: 1456396555.175 ( -0.066 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/laser"[label="Broadcaster: /tb2/link1_broadcaster_tb2\nAverage rate: 20.148 Hz\nMost recent transform: 1456396555.108 ( -0.000 sec old)\nBuffer length: 4.914 sec\n"];
+"tb2/base_link" -> "tb2/caster_back_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/caster_front_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/cliff_sensor_front_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/cliff_sensor_left_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/cliff_sensor_right_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+"tb2/base_link" -> "tb2/gyro_link"[label="Broadcaster: /tb2/robot_state_publisher\nAverage rate: 30.202 Hz\nMost recent transform: 1456396555.551 ( -0.443 sec old)\nBuffer length: 4.900 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1456396555.108"[ shape=plaintext ] ;
+ }->"tb2/map";
+}
