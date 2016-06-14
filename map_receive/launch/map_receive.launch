@@ -5,9 +5,9 @@
   <arg name="robot_name"/>
   <node pkg="map_receive" type="map_receive" name="map_receive" output="screen">
   	<!-- here we put both paramaters for the robots IP and map topic names/-->
-        <rosparam param="robots_handler"> [10.1.16.75, 10.1.16.2457, /tb1/map, /tb3/map, /tb1/posegmapping, /tb3/posegmapping]</rosparam>
+        <rosparam param="robots_handler"> [10.1.16.73, 10.1.16.245, /tb1/map, /tb3/map, /tb1/posegmapping, /tb3/posegmapping]</rosparam>
         <!--rosparam param="robots_handler"> [192.168.1.9, 192.168.1.8, /tb1/map, /tb2/map, /tb1/posegmaping, /tb2/posegmaping]</rosparam-->
-	<param name="map_is_compressed" value="false"/>
+	<param name="map_is_compressed" value="true"/>
   </node>
 
   <!--node pkg="rviz" type="rviz" name="rviz" output="screen"/-->   

@@ -6,7 +6,7 @@ if [ $# -eq 0 ] ; then
 fi
 
 
-robot_launch_file="multi_robot.launch"
+robot_launch_file="multi_robot_torob.launch"
 for robot_name in $@
 do
     robot_launch_file="$robot_launch_file robot_name:=$robot_name"

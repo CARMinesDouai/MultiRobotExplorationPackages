@@ -354,6 +354,7 @@ int main(int argc, char **argv) {
     private_nh.getParam("compress_map", compress_map_);
     ip_ = "10.1.16.75";
     private_nh.getParam("ip", ip_);
+    cout<<"starting map_send on this ip: "<<ip_<<endl;
     double x = 0.0, y = 0.0;
     private_nh.getParam("x_initial", x);
     private_nh.getParam("y_initial", y);
@@ -377,6 +378,8 @@ int main(int argc, char **argv) {
 
     //calling the init()
     init();
+
+    puts("Waiting for incoming connections... ffff");
 
     ros::Rate loop_rate(0.5);//10.0);//
     while(nh.ok())

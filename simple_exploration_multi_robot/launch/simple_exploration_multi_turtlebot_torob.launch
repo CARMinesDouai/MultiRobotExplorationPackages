@@ -50,6 +50,17 @@
     <param name="transform_publish_period" value="0.1"/>
   </node>
 
+  <node pkg="torob" type="map_to_vmap" name="map_to_vmap">
+    <param name="map_topic"      value="/$(arg robot_name)/map"/>
+    <param name="vmap_topic"      value="/$(arg robot_name)/vmap"/>
+    <param name="frontier_topic"      value="/$(arg robot_name)/phrontier"/>
+  </node>
+
+  <node pkg="torob" type="viewer" name="viewer">
+    <param name="vmap_topic"      value="/$(arg robot_name)/vmap"/>
+  </node>
+
+
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <remap from="base_scan" to="/$(arg robot_name)/scan"/>
     <remap from="map" to="/$(arg robot_name)/map"/>
@@ -133,7 +144,7 @@
     <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/robot_base_frame"> "/tb2/base_link" </rosparam>
     <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/static/map_topic"> "/tb2/map_topic" </rosparam-->
   </node>
-  <node pkg="map_send" type="map_send" name="map_send" output="screen" >
+  <!--node pkg="map_send" type="map_send" name="map_send" output="screen" >
     <param name="ip"         	 value="10.1.16.73"/>
     <param name="map_topic"  	 value="/$(arg robot_name)/map"/>
     <param name="pose_topic" 	 value="/$(arg robot_name)/posegmapping"/>
@@ -144,12 +155,12 @@
   <node pkg="map_receive" type="map_receive" name="map_receive" output="screen" >
     <rosparam param="robots_handler"> [10.1.16.75, 10.1.16.245, /tb1/map, /tb3/map, /tb1/posegmapping, /tb3/posegmapping]</rosparam>
     <param name="map_is_compressed" value="true"/>
-  </node>
+  </node-->
 
-  <!--node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" />
+  <node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" />
   
   <node pkg="rosbag" type="record" name="rosbag_robulab_pose_scan_odom_tf"
-    args="record -o $(find simple_exploration_multi_robot)/rosbags /$(arg robot_name)/move_base_simple/goal /$(arg robot_name)/posegmapping /tf" /-->
+    args="record -o $(find simple_exploration_multi_robot)/rosbags /$(arg robot_name)/move_base_simple/goal /$(arg robot_name)/posegmapping /tf" />
 
       
 
