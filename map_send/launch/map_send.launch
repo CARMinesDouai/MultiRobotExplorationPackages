@@ -8,6 +8,7 @@
     <param name="ip"             value="10.1.16.73"/>
     <param name="map_topic"      value="/map"/>
     <param name="pose_topic"     value="/posegmapping"/>
+    <param name="goal_topic"     value="/tb1/move_base_simple/goal"/>
     <param name="pose_is_needed" value="false"/>
     <param name="x_initial"      value="15.73"/>
     <param name="y_initial"      value="0.0"/>

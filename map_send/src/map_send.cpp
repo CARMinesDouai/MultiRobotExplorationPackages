@@ -46,7 +46,7 @@ typedef unsigned char uchar;
 using namespace std;
 
 //some global variables
-std::string map_topic_, pose_topic_;
+std::string map_topic_, pose_topic_, goal_topic_;
 struct sockaddr name;        // namr of the socket
 int inc;                     // how manytimes we send the map
 nav_msgs::OccupancyGrid map_;// incoming map topic
@@ -60,7 +60,7 @@ bool map_exists;             // map existing?
 bool compress_map_;          // in case we wana send a compresssed map
 bool pose_exists;            // map existing?
 bool pose_is_needed_;
-int x_init_pose_; int y_init_pose_;
+int x_currt_goal_pose_; int y_currt_goal_pose_;
 int  x_currt_pose_;int  y_currt_pose_;
 string ip_;
 //this function compress an integer vector
@@ -176,10 +176,10 @@ int send_map(int socket){
     stat = write(socket, (void *) &width_, sizeof(int));
     //third we wrtite the height of the map
     stat = write(socket, (void *) &height_, sizeof(int));
-    //fourth we wrtite the x intial coordinate of the robot
-    //stat = write(socket, (void *) &x_init_pose_, sizeof(int));
-    //fifth we wrtite the y intial coordinate of the robot
-    //stat = write(socket, (void *) &y_init_pose_, sizeof(int));
+    //fourth we wrtite the x current goal coordinate of the robot
+    stat = write(socket, (void *) &x_currt_goal_pose_, sizeof(int));
+    //fifth we wrtite the y current goal coordinate of the robot
+    stat = write(socket, (void *) &y_currt_goal_pose_, sizeof(int));
     //sexth we wrtite the x intial coordinate of the robot
     stat = write(socket, (void *) &x_currt_pose_, sizeof(int));
     //seventh we wrtite the y intial coordinate of the robot
@@ -285,6 +285,13 @@ void pose_subscriber_call_back(const geometry_msgs::PoseStamped& msg)
     y_currt_pose_ = (int) (msg.pose.position.y*100);//cm
     pose_exists=true;
 }
+
+void goal_subscriber_call_back(const geometry_msgs::PoseStamped& msg)
+{
+    x_currt_goal_pose_ = (int) (msg.pose.position.x*100);//cm
+    y_currt_goal_pose_ = (int) (msg.pose.position.y*100);//cm
+    pose_exists=true;
+}
 void closeSocket()
 {
     close(socket_desc);
@@ -347,6 +354,10 @@ int main(int argc, char **argv) {
     private_nh.getParam("map_topic", map_topic_);
     pose_topic_="/posegmapping";
     private_nh.getParam("pose_topic", pose_topic_);
+
+    goal_topic_="/tb1/move_base_simple/goal";
+    private_nh.getParam("goal_topic_", pose_topic_);
+
     pose_is_needed_ = true;
     private_nh.getParam("pose_is_needed", pose_is_needed_);
 
@@ -358,8 +369,8 @@ int main(int argc, char **argv) {
     double x = 0.0, y = 0.0;
     private_nh.getParam("x_initial", x);
     private_nh.getParam("y_initial", y);
-    x_init_pose_ = 0; y_init_pose_ = 0;
-    x_init_pose_ = (int) (x*100);y_init_pose_ = (int) (y*100);
+    x_currt_goal_pose_ = 0; y_currt_goal_pose_ = 0;
+    x_currt_goal_pose_ = (int) (x*100);y_currt_goal_pose_ = (int) (y*100);
 
     x_currt_pose_ = 0; y_currt_pose_ = 0;
 
@@ -367,6 +378,7 @@ int main(int argc, char **argv) {
 
     ros::Subscriber map_subscriber  = nh.subscribe( map_topic_, 10, map_subscriber_call_back );
     ros::Subscriber pose_subscriber = nh.subscribe( pose_topic_, 10, pose_subscriber_call_back );
+    ros::Subscriber goal_subscriber = nh.subscribe( goal_topic_, 10, goal_subscriber_call_back );
 
     socket_is_created=false;
     //initializing the map

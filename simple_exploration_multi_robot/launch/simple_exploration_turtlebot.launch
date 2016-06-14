@@ -133,10 +133,11 @@
     <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/robot_base_frame"> "/tb2/base_link" </rosparam>
     <rosparam param="/$(arg robot_name)/costmap_for_exploration_global/costmap/static/map_topic"> "/tb2/map_topic" </rosparam-->
   </node>
-  <!--node pkg="map_send" type="map_send" name="map_send" output="screen" >
+  <node pkg="map_send" type="map_send" name="map_send" output="screen" >
     <param name="ip"         	 value="10.1.16.73"/>
     <param name="map_topic"  	 value="/$(arg robot_name)/map"/>
     <param name="pose_topic" 	 value="/$(arg robot_name)/posegmapping"/>
+    <param name="goal_topic"     value="/$(arg robot_name)/move_base_simple/goal"/>
     <param name="x_initial"  	 value="0.0"/>
     <param name="y_initial"      value="1.695"/>
     <param name="compress_map"   value="true"/>
@@ -144,7 +145,7 @@
   <node pkg="map_receive" type="map_receive" name="map_receive" output="screen" >
     <rosparam param="robots_handler"> [10.1.16.75, 10.1.16.245, /tb1/map, /tb3/map, /tb1/posegmapping, /tb3/posegmapping]</rosparam>
     <param name="map_is_compressed" value="true"/>
-  </node-->
+  </node>
 
   <node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" />
   

@@ -49,7 +49,8 @@ struct robot_in{
     short  id;
     string out_map_topic;
     string out_pose_topic;
-    geometry_msgs::Pose2D inital_pose;
+    string out_goal_topic;
+    geometry_msgs::Pose2D goal_pose;
     geometry_msgs::Pose2D current_pose;
 };
 
@@ -60,6 +61,8 @@ vector<nav_msgs::OccupancyGrid> map_; //a vector handling the incoming maps;
 vector<robot_in> robots_in_map_ips;   //a vector handling robot to be connect to;
 vector<ros::Publisher> map_publisher; //ros::Publisher map_publisher;
 vector<ros::Publisher> pose_publisher; //ros::Publisher pose_publisher of the other robots
+vector<ros::Publisher> goal_publisher; //ros::Publisher pose_publisher of the other robots
+
 int xrpose_, yrpose_, trpose_;        // initia position of the robot
 int xr_currt_pose_, yr_currt_pose_;        // initia position of the robot
 
@@ -165,11 +168,11 @@ int receive_map(int socket, short id)
     }while(h<0);
 
     //Find the inital pose of the robot x
-    //do{px = read(socket, &xrpose_, sizeof(int));}while(px<0);
+    do{px = read(socket, &xrpose_, sizeof(int));}while(px<0);
 //cout<<"the robot is in xrpose_ "<<xrpose_<<endl;
 
     //Find the inital pose of the robot y
-    //do{py = read(socket, &yrpose_, sizeof(int));}while(py<0);//cout<<"the robot is in yrpose_ "<<yrpose_<<endl;
+    do{py = read(socket, &yrpose_, sizeof(int));}while(py<0);//cout<<"the robot is in yrpose_ "<<yrpose_<<endl;
 
 
     //Find the current pose of the robot x
@@ -180,15 +183,15 @@ int receive_map(int socket, short id)
     do{pyc = read(socket, &yr_currt_pose_, sizeof(int));//cout<<"the robot is in yrpose_ "<<yrpose_<<endl;
     }while(pyc<0);
 
-    robots_in_map_ips[id].inital_pose.x      = (double) ((double) xrpose_/(double) 100);
-    robots_in_map_ips[id].inital_pose.y      = (double) ((double) yrpose_/(double) 100);
-    robots_in_map_ips[id].inital_pose.theta  = (double) trpose_;//not used till now
+    robots_in_map_ips[id].goal_pose.x      = (double) ((double) xrpose_/(double) 100);
+    robots_in_map_ips[id].goal_pose.y      = (double) ((double) yrpose_/(double) 100);
+    robots_in_map_ips[id].goal_pose.theta  = (double) trpose_;//not used till now
 
     robots_in_map_ips[id].current_pose.x     = (double) ((double) xr_currt_pose_/(double) 100);
     robots_in_map_ips[id].current_pose.y     = (double) ((double) yr_currt_pose_/(double) 100);
     robots_in_map_ips[id].current_pose.theta = (double) trpose_;//not used till now
 
-    //cout<<"the robot is in rpose_ "<<robots_in_map_ips[id].inital_pose.x<<" "<<robots_in_map_ips[id].inital_pose.y<<endl;
+    //cout<<"the robot is in rpose_ "<<robots_in_map_ips[id].goal_pose.x<<" "<<robots_in_map_ips[id].goal_pose.y<<endl;
 
     map_[id].info.width                      =  width_;
     map_[id].info.height                     =  height_;
@@ -369,7 +372,7 @@ bool process_recieving_map(robot_in rb)
         conect_to_server=false;
         return false;
     }else{
-        conect_to_server=true;  rb.inital_pose.x=0;rb.inital_pose.y=0;rb.inital_pose.theta=0;
+        conect_to_server=true;  rb.goal_pose.x=0;rb.goal_pose.y=0;rb.goal_pose.theta=0;
 
         puts(" Connected\n");
         receive_map(socket_desc, rb.id);
@@ -404,8 +407,10 @@ int main(int argc, char **argv) {
         rb.id = i;
         //string idstr;idstr = static_cast<ostringstream*>( &(ostringstream() << rb.id+1) )->str();
         rb.ip = static_cast<std::string>(string_list[i]);rb.out_map_topic=static_cast<std::string>(string_list[i+s]);
-        rb.out_pose_topic=static_cast<std::string>(string_list[i+s*2]);
-        rb.inital_pose.x = 0;rb.inital_pose.y=0;rb.inital_pose.theta=0;
+        rb.out_pose_topic = static_cast<std::string>(string_list[i+s*2]);
+        if(i == 0) rb.out_goal_topic = "/tb1/goal";
+        if(i == 1) rb.out_goal_topic = "/tb3/goal";
+        rb.goal_pose.x = 0;rb.goal_pose.y=0;rb.goal_pose.theta=0;
         rb.current_pose.x = 0;rb.current_pose.y=0;rb.current_pose.theta=0;
         robots_in_map_ips[i] = rb;
         cout<<" robots_in_map_ips[i] is]*********** "<<rb.out_pose_topic<<" rb.out_map_topic "<<rb.out_map_topic<<endl;
@@ -417,12 +422,14 @@ int main(int argc, char **argv) {
     map_publisher.resize(s);
     map_metadata_subs.resize(s);
     pose_publisher.resize(s);
+    goal_publisher.resize(s);
 
     map_.resize(s);
     for (int i=0; i<s; i++){
         map_metadata_subs[i]  = nh.advertise<nav_msgs::MapMetaData>(robots_in_map_ips[i].out_map_topic+"_metadata", 10, true);
         map_publisher[i]      = nh.advertise<nav_msgs::OccupancyGrid>(robots_in_map_ips[i].out_map_topic, 10, true);
         pose_publisher[i]     = nh.advertise<geometry_msgs::PoseStamped>(robots_in_map_ips[i].out_pose_topic, 10, true);
+        goal_publisher[i]     = nh.advertise<geometry_msgs::PoseStamped>(robots_in_map_ips[i].out_goal_topic, 10, true);
     }
     resolution_        = 0.050;
     conect_to_server   = false;
@@ -446,10 +453,16 @@ int main(int argc, char **argv) {
             if(process_recieving_map(robots_in_map_ips[ip])){
                 map_publisher[ip].publish(map_[ip]);
                 map_metadata_subs[ip].publish(map_[ip].info);
-                geometry_msgs::PoseStamped P; P.pose.position.x=robots_in_map_ips[ip].current_pose.x;
-                P.pose.position.y=robots_in_map_ips[ip].current_pose.y;
+                geometry_msgs::PoseStamped P;
+                P.pose.position.x = robots_in_map_ips[ip].current_pose.x;
+                P.pose.position.y = robots_in_map_ips[ip].current_pose.y;
                 P.header.frame_id = "/tb1/map";
                 pose_publisher[ip].publish(P);
+                //publishing the current assigned goal
+                P.pose.position.x = robots_in_map_ips[ip].goal_pose.x;
+                P.pose.position.y = robots_in_map_ips[ip].goal_pose.y;
+                goal_publisher[ip].publish(P);
+
                 cout<<robots_in_map_ips[ip].current_pose.y<<" ***********[ map published ]*********** "<<robots_in_map_ips[ip].out_map_topic<<endl;
             }
             //cout<<" map_is_compressed is $$$$$$$$$$$$$$$$$$$ **** "<<map_is_compressed_<<endl;
