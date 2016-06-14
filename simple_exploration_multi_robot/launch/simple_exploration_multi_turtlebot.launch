@@ -137,6 +137,7 @@
     <param name="ip"         	 value="10.1.16.73"/>
     <param name="map_topic"  	 value="/$(arg robot_name)/map"/>
     <param name="pose_topic" 	 value="/$(arg robot_name)/posegmapping"/>
+    <param name="goal_topic"     value="/$(arg robot_name)/move_base_simple/goal"/>
     <param name="x_initial"  	 value="0.0"/>
     <param name="y_initial"      value="1.695"/>
     <param name="compress_map"   value="true"/>
