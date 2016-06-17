@@ -1,3 +1,30 @@
+/*
+ * Copyright (c) 2015, Khelifa Baizid <Khelifa.Baizid@mines-douai.fr>
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the University of California, Berkeley nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <ros/ros.h>
 #include <stdlib.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -5,7 +32,6 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <visualization_msgs/MarkerArray.h>
-
 #include <time.h>       /* time */
 
 using namespace std;
@@ -21,6 +47,7 @@ geometry_msgs::Point32 frontier;
 ros::Publisher pub_goal, pub_goal_rviz;
 actionlib_msgs::GoalStatusArray moveBaseStatus;
 int gols_inc;
+string map_frame_topic_;
 
 bool PhrontiersCallback(const sensor_msgs::PointCloud::ConstPtr& msg){
     //check the close ponits to visite
@@ -90,17 +117,6 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
     mArraySentGoals.markers[gols_inc]=(visualization_msgs::Marker(m));
     m.action = visualization_msgs::Marker::DELETE;
 
-    //mArraySentGoals.markers.push_back(visualization_msgs::Marker(m));
-    /*
-    map_nd.pose.position.x = 2.0;//p.pose.position.x;
-    map_nd.pose.position.y = 2.0;//p.pose.position.y;
-    map_nd.action = visualization_msgs::Marker::ADD;
-    mArraySentGoals.markers[1]=map_nd;//mArraySentGoals.markers.push_back( visualization_msgs::Marker(map_nd) );
-    map_nd.pose.position.x = 0.0;//p.pose.position.x;
-    map_nd.pose.position.y = 0.0;//p.pose.position.y;
-    map_nd.action = visualization_msgs::Marker::ADD;
-    mArraySentGoals.markers[1]=map_nd;
-*/
     pub_goal_rviz.publish(mArraySentGoals);
 
     gols_inc++;
@@ -110,9 +126,9 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
 
 void publishGoal(){
     //goalWasPublished= true;
-    simple_goal.header.frame_id="/tb2/map";
-    simple_goal.pose.position.x=frontier.x;
-    simple_goal.pose.position.y=frontier.y;
+    simple_goal.header.frame_id = map_frame_topic_;
+    simple_goal.pose.position.x = frontier.x;
+    simple_goal.pose.position.y = frontier.y;
 
     simple_goal.pose.orientation.x=0;simple_goal.pose.orientation.y=0;simple_goal.pose.orientation.z=0;simple_goal.pose.orientation.w=1;
     cout<<"next frontier "<<simple_goal.pose.position.x<<" -- "<<simple_goal.pose.position.y<<endl;
@@ -124,28 +140,7 @@ void RobotPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg){
     //check the close ponits to visite
     getingPose=true;
     robot_cur_pose.pose  = msg->pose;
-    /*if(!prev_pose_was_taken)
-        robot_prev_pose.pose = robot_cur_pose.pose;
-    //we check if we are close to the prev. pose
-    if(robot_prev_pose.pose.position.x==robot_cur_pose.pose.position.x && robot_prev_pose.pose.position.y==robot_cur_pose.pose.position.y)
-    {
-        //count 500 times, which is equivqlent to 5s
-        inc_pose++;
-        //cout<<inc_pose<<endl;
-        if(inc_pose>500){
-            goalWasPublished=false;
-            searchAnotherFrontier=true;
-            inc_pose=0;
-            cout<<"!!!!!!!!!!!!! robot at the same position !!!!!!!!!!!!!"<<endl;
-        }else{
-
-        }
-    }else{
-        robot_prev_pose.pose = robot_cur_pose.pose;
-    }*/
-
     getingPose=false;
-    //cout<<"<<<<<<<<<<<<<<<<<<<<<<<from pose robot"<<endl;
 }
 
 bool StatusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr& msg){
@@ -171,22 +166,37 @@ int main(int argc, char** argv)
    ros::NodeHandle n_;
 
    //get the curent robot pose
-   ros::Subscriber sub_ph     = n_.subscribe<sensor_msgs::PointCloud>("/tb2/phrontier_global", 100, &PhrontiersCallback);
-   ros::Subscriber sub_status = n_.subscribe<actionlib_msgs::GoalStatusArray>("/tb2/move_base/status", 100, &StatusCallback);
-   ros::Subscriber sub_pr     = n_.subscribe<geometry_msgs::PoseStamped>("/tb2/posegmapping", 10, &RobotPoseCallback);
-   pub_goal                   = n_.advertise<geometry_msgs::PoseStamped>("/tb2/move_base_simple/goal",10);
-   pub_goal_rviz              = n_.advertise<visualization_msgs::MarkerArray>("/tb2/all_sent_goals",10);
+   ros::NodeHandle private_nh("~");
+
+   string frontier_topic_ = "/tb2/phrontier_global";
+   private_nh.getParam("frontier_topic", frontier_topic_);
+
+   string move_base_status_ = "/tb2/move_base/status";
+   private_nh.getParam("move_base_status", move_base_status_);
+
+   string pose_topic_ = "/tb2/posegmapping";
+   private_nh.getParam("pose_topic", pose_topic_);
+
+   string goal_topic_ = "/tb2/posegmapping";
+   private_nh.getParam("goal_topic", goal_topic_);
+
+   string all_sent_goals_topic_ = "/tb2/all_sent_goals";
+   private_nh.getParam("all_sent_goals_topic", all_sent_goals_topic_);
+
+   map_frame_topic_ = "/tb2/map";
+   private_nh.getParam("map_frame_topic", map_frame_topic_);
+
+   ros::Subscriber sub_ph     = n_.subscribe<sensor_msgs::PointCloud>(frontier_topic_, 100, &PhrontiersCallback);
+   ros::Subscriber sub_status = n_.subscribe<actionlib_msgs::GoalStatusArray>(move_base_status_, 100, &StatusCallback);
+   ros::Subscriber sub_pr     = n_.subscribe<geometry_msgs::PoseStamped>(pose_topic_, 10, &RobotPoseCallback);
+   pub_goal                   = n_.advertise<geometry_msgs::PoseStamped>(goal_topic_,10);
+   pub_goal_rviz              = n_.advertise<visualization_msgs::MarkerArray>(all_sent_goals_topic_,10);
 
    getingPose=true;
    //goalWasPublished=false;
    frontiersExist=false;
    gols_inc=0;
    mArraySentGoals.markers.resize(1000);
-   //values bellow can get from launch file
-//   min_search_radius.resize(6);
-//   min_search_radius[0]=2.0;min_search_radius[1]=1.8;min_search_radius[2]=1.6;min_search_radius[3]=1.4;min_search_radius[4]=1.2;min_search_radius[5]=1.0;
-//   max_search_radius.resize(6);
-//   max_search_radius[0]=5.0;max_search_radius[1]=6.8;max_search_radius[2]=7.6;max_search_radius[3]=8.4;max_search_radius[4]=9.2;max_search_radius[5]=30.0;
 
    /* initialize random seed: */
    srand (time(NULL));
@@ -194,7 +204,6 @@ int main(int argc, char** argv)
    ros::Rate loop_rate(3);
    while(ros::ok())
    {
-
        cout<<inc_local<<endl;
        inc_local++;
        if(readyForNewGoal())
