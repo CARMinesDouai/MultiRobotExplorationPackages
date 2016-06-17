@@ -194,18 +194,7 @@ int main(int argc, char** argv)
    ros::Rate loop_rate(3);
    while(ros::ok())
    {
-       /*if(inc_local>100)
-       {
-           //goalWasPublished= true;
-           simple_goal.header.frame_id="/tb2/map";
-           simple_goal.pose.position.x=1.0;
-           simple_goal.pose.position.y=0.1;
 
-           simple_goal.pose.orientation.x=0;simple_goal.pose.orientation.y=0;simple_goal.pose.orientation.z=0;simple_goal.pose.orientation.w=1;
-           cout<<"next frontier "<<simple_goal.pose.position.x<<" -- "<<simple_goal.pose.position.y<<endl;
-           pub_goal.publish(simple_goal);
-           cout<<"wow==="<<endl;
-       }*/
        cout<<inc_local<<endl;
        inc_local++;
        if(readyForNewGoal())
