@@ -149,11 +149,16 @@
     <param name="map_is_compressed" value="true"/>
   </node>
 
-  <node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" />
-  
+  <node pkg="simple_exploration_multi_robot" type="simple_exploration_multi_robot" name="simple_exploration_multi_robot" output="screen" >
+      <param name="frontier_topic"        value="/$(arg robot_name)/phrontier_global"/>
+    <param name="frontier_topic_"       value="/$(arg robot_name)/move_base/status"/>
+    <param name="pose_topic"            value="/$(arg robot_name)/posegmapping"/>
+    <param name="goal_topic"            value="/$(arg robot_name)/posegmapping"/>
+    <param name="all_sent_goals_topic"  value="/$(arg robot_name)/all_sent_goals"/>
+    <param name="map_frame_topic"       value="/$(arg robot_name)/map"/>
   <node pkg="rosbag" type="record" name="rosbag_robulab_pose_scan_odom_tf"
     args="record -o $(find simple_exploration_multi_robot)/rosbags /$(arg robot_name)/move_base_simple/goal /$(arg robot_name)/posegmapping /tf" />
-
+  </node>
       
 
   <node pkg="map_merging" type="map_merging" name="map_merging" output="screen">
