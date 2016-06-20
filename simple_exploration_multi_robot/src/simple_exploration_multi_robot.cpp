@@ -99,18 +99,18 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
 {
     //graph nodes
     visualization_msgs::Marker m;
-    m.header.frame_id = "map";
-    m.header.stamp = ros::Time::now();
-    m.id = gols_inc;
-    m.ns = "simple_exploration";
-    m.type = visualization_msgs::Marker::CYLINDER;
+    m.header.frame_id = map_frame_topic_;
+    m.header.stamp    = ros::Time::now();
+    m.id              = gols_inc;
+    m.ns              = "simple_exploration";
+    m.type            = visualization_msgs::Marker::CYLINDER;
     m.pose.position.x = p.pose.position.x;
     m.pose.position.y = p.pose.position.y;
     m.pose.position.z = 0.0;
-    m.scale.x = 0.1;m.scale.y = 0.1;m.scale.z = 0.1;m.color.r = 1.0;
-    m.color.g = 0.0;m.color.b = 0.5;m.color.a = 1.0;
-    m.lifetime = ros::Duration(0);
-    m.action = visualization_msgs::Marker::ADD;
+    m.scale.x         = 0.1;m.scale.y = 0.1;m.scale.z = 0.1;m.color.r = 1.0;
+    m.color.g         = 0.0;m.color.b = 0.5;m.color.a = 1.0;
+    m.lifetime        = ros::Duration(0);
+    m.action          = visualization_msgs::Marker::ADD;
 
     if(gols_inc>=999) gols_inc=0;
     cout<<"gols_inc: "<<gols_inc<<endl;
@@ -126,11 +126,11 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
 
 void publishGoal(){
     //goalWasPublished= true;
-    simple_goal.header.frame_id = map_frame_topic_;
-    simple_goal.pose.position.x = frontier.x;
-    simple_goal.pose.position.y = frontier.y;
+    simple_goal.header.frame_id    = map_frame_topic_;
+    simple_goal.pose.position.x    = frontier.x;
+    simple_goal.pose.position.y    = frontier.y;
 
-    simple_goal.pose.orientation.x=0;simple_goal.pose.orientation.y=0;simple_goal.pose.orientation.z=0;simple_goal.pose.orientation.w=1;
+    simple_goal.pose.orientation.x = 0;simple_goal.pose.orientation.y=0;simple_goal.pose.orientation.z=0;simple_goal.pose.orientation.w=1;
     cout<<"next frontier "<<simple_goal.pose.position.x<<" -- "<<simple_goal.pose.position.y<<endl;
     pub_goal.publish(simple_goal);
     ProntiersTrack(simple_goal);
@@ -168,22 +168,22 @@ int main(int argc, char** argv)
    //get the curent robot pose
    ros::NodeHandle private_nh("~");
 
-   string frontier_topic_ = "/tb2/phrontier_global";
+   string frontier_topic_       = "/tb2/phrontier_global";
    private_nh.getParam("frontier_topic", frontier_topic_);
 
-   string move_base_status_ = "/tb2/move_base/status";
+   string move_base_status_     = "/tb2/move_base/status";
    private_nh.getParam("move_base_status", move_base_status_);
 
-   string pose_topic_ = "/tb2/posegmapping";
+   string pose_topic_           = "/tb2/posegmapping";
    private_nh.getParam("pose_topic", pose_topic_);
 
-   string goal_topic_ = "/tb2/posegmapping";
+   string goal_topic_           = "/tb2/current_goal";
    private_nh.getParam("goal_topic", goal_topic_);
 
    string all_sent_goals_topic_ = "/tb2/all_sent_goals";
    private_nh.getParam("all_sent_goals_topic", all_sent_goals_topic_);
 
-   map_frame_topic_ = "/tb2/map";
+   map_frame_topic_             = "/tb2/map";
    private_nh.getParam("map_frame_topic", map_frame_topic_);
 
    ros::Subscriber sub_ph     = n_.subscribe<sensor_msgs::PointCloud>(frontier_topic_, 100, &PhrontiersCallback);
