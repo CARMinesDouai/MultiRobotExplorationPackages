@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+
+<launch>
+  <include file="$(find turtlebot_car)/launch/bringup_minimal.launch" />
+  <include file="$(find turtlebot_car)/launch/gmapping.launch" />
+  <include file="$(find turtlebot_car)/launch/move_base.launch" />
+
+
+  <node pkg="pose_path_publisher" type="pose_path_publisher" name="pose_path_publisher" output="screen">
+  	<!-- the frame where the robot pose and path will be exprese: ONLY odom or map -->
+        <param name="target_frame_name" value="map" />
+        <!-- the output topics names, puting an empty name ("") mean topic will not be published (DO NOT EMPTY BOTH PLZ.!)-->
+        <param name="pose_topic_name" value="posegmapping" />
+        <param name="path_topic_name" value="" />
+        <param name="publish_frequency_" value="10.0" />
+  </node>
+  <!--node pkg="simple_exploration" type="simple_exploration" name="simple_exploration" >
+  </node-->
+
+  <!--used to compute frontiers by   rosrun phrontier_exploration headless phrontier_explorationpackage_extract_frontiers -->
+  <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_for_exploration_global">
+    
+    <rosparam ns="costmap" subst_value="true">
+      global_frame: /map
+      robot_base_frame: /base_link
+      update_frequency: 0.2
+      publish_frequency: 0.2
+      rolling_window: false
+      always_send_full_costmap: true
+
+      # Map management parameters
+      unknown_cost_value: 255
+      
+      robot_radius: 0.30
+      plugins: 
+        - {name: static, type: "costmap_2d::StaticLayer"}
+        - {name: inflation,        type: "costmap_2d::InflationLayer"}  
+      static:
+        #Can pull data from gmapping, map_server or a non-rolling costmap            
+        map_topic: /map
+        subscribe_to_updates: true 
+      inflation:
+        inflation_radius: 0.30
+
+    </rosparam>
+  </node>
+  
+  <node pkg="phrontier_exploration" type="headless" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
+    <param name="map_topic" value="/costmap_for_exploration_global/costmap/costmap"/>
+    <param name="frontier_topic" value="phrontier_global"/>
+  </node>
+  
+ 
+
+</launch>
+  
+  

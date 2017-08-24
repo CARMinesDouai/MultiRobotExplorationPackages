@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<launch>
+
+
+  <node pkg="phrontier_exploration" type="pharos" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
+    <param name="map_topic" value="/costmap_for_exploration_global/costmap/costmap"/>
+    <param name="frontier_topic" value="phrontier_global"/>
+  </node>
+  
+ 
+
+</launch>
+  
+  

@@ -1,0 +1,145 @@
+/**
+Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
+
+#include <ros/ros.h>
+#include "multi_master_bridge/MapData.h"
+#include "nav_msgs/OccupancyGrid.h"
+#include "geometry_msgs/Pose.h"
+
+#define UNKNOWN -1
+std::map<std::string,  multi_master_bridge::MapData> pipeline;
+nav_msgs::OccupancyGrid global_map;
+geometry_msgs::Pose mypose;
+ros::Publisher  global_map_pub;
+void getRelativePose(geometry_msgs::Pose p, geometry_msgs::Pose q, geometry_msgs::Pose &delta, double resolution) {
+  
+    delta.position.x = round((p.position.x - q.position.x) / resolution);
+    delta.position.y = round((p.position.y - q.position.y) / resolution);
+    delta.position.z = round((p.position.z - q.position.z) / resolution);
+}
+
+void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
+{
+    multi_master_bridge::MapData mdata;
+    mdata.position.x = 0.0;
+    mdata.position.y = 0.0;
+    mdata.position.z = 0.0;
+    mdata.map = *msg;
+    pipeline["local"] = mdata;
+}
+void register_local_map_1(const nav_msgs::OccupancyGrid::ConstPtr& msg)
+{
+    multi_master_bridge::MapData mdata;
+    mdata.position.x = -0.75;
+    mdata.position.y = -1.03;
+    mdata.position.z = 0.0;
+    mdata.map = *msg;
+    pipeline["local_1"] = mdata;
+}
+void register_local_map_2(const nav_msgs::OccupancyGrid::ConstPtr& msg)
+{
+    multi_master_bridge::MapData mdata;
+    mdata.position.x = 0.83;
+    mdata.position.y = -1.03;
+    mdata.position.z = 0.0;
+    mdata.map = *msg;
+    pipeline["local_2"] = mdata;
+}
+
+void mege_pipeline()
+{
+    // reset global map
+    std::fill(global_map.data.begin(), global_map.data.end(), -1);
+    // calculate probability for each cell
+    double odds = 1.0, oddsi = 0.0;
+    geometry_msgs::Pose offset;
+    geometry_msgs::Pose delta;
+    double cell;
+    std::map<std::string,  multi_master_bridge::MapData>::iterator it;
+    int di, dj;
+    for(int i = 0; i < global_map.info.width; i++)
+    {
+        for(int j = 0; j < global_map.info.height; j++)
+        { 
+            odds = 1.0;  
+            for ( it = pipeline.begin(); it != pipeline.end(); it++ )
+            {
+                getRelativePose(global_map.info.origin, it->second.map.info.origin,offset, global_map.info.resolution);
+                offset.position.x = abs(offset.position.x);
+                offset.position.y = abs(offset.position.y);
+                geometry_msgs::Pose q ;
+                q.position = it->second.position;
+                getRelativePose(mypose,q ,delta, global_map.info.resolution);
+                // now calculate the correspond point in the other map
+                di = i + delta.position.x - offset.position.x;
+                dj = j + delta.position.y - offset.position.y;
+                if(di < 0 || dj < 0 || di >= it->second.map.info.width || dj >= it->second.map.info.height)
+                    continue;
+                // now get the cell
+                cell = (double)it->second.map.data[di + dj*it->second.map.info.width];
+                if(cell == -1.0 || cell == 100.0) continue;
+                oddsi = cell/ (100.0-cell);
+
+                odds *= oddsi;
+            }
+            if(odds == 1.0) continue;
+            global_map.data[i + j*global_map.info.width] = round((odds/ (1.0 + odds))*100.0);
+        }
+    }
+    ROS_INFO("publish global map");
+    global_map_pub.publish(global_map);
+}
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "map_merging");
+	ros::NodeHandle n("~");
+
+	ros::Subscriber sub = n.subscribe<nav_msgs::OccupancyGrid>("/pmap", 50,&register_local_map);
+    ros::Subscriber sub1 = n.subscribe<nav_msgs::OccupancyGrid>("/pmap_1", 50,&register_local_map_1);
+    ros::Subscriber sub2 = n.subscribe<nav_msgs::OccupancyGrid>("/pmap_2", 50,&register_local_map_2);
+    global_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/global_map", 50, true);
+    int w =  round((60.0 )/0.05);
+    int h = round((60.0 )/0.05);
+    global_map.data.resize(w*h,-1);
+    global_map.info.width = w;
+    global_map.info.height = h;
+    global_map.info.resolution = 0.05;
+    global_map.info.origin.position.x = -30.0;
+    global_map.info.origin.position.y = -30.0;
+    global_map.info.origin.position.z = 0.0;
+    global_map.info.origin.orientation.x = 0.0;
+    global_map.info.origin.orientation.y = 0.0;
+    global_map.info.origin.orientation.z = 0.0;
+    global_map.info.origin.orientation.w = 1.0;
+    mypose.position.x = 0.0;
+    mypose.position.y = 0.0;
+    mypose.position.z = 0.0;
+    ros::Rate r(1);
+
+    while(ros::ok())
+    {
+        ros::spinOnce();
+        mege_pipeline();
+        r.sleep();
+    }
+}

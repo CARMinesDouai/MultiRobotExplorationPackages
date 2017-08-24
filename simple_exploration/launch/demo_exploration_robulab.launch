@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <include file="$(find robulab)/launch/gmapping_explore.launch" /> 
+  
+  <include file="$(find simple_exploration)/launch/costmap_only.launch" /> 
+
+  <include file="$(find simple_exploration)/launch/phrontiers.launch" />
+  
+  <node pkg="simple_exploration" type="simple_exploration" name="simple_exploration"/>  
+
+</launch>
+
