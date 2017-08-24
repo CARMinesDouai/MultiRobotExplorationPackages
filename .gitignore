@@ -1,2 +1,10 @@
 *~
 *CATKIN_IGNORE
+pharos_probabilistic_merging/bin
+pharos_probabilistic_merging/build
+pharos_probabilistic_merging/image
+pharos_probabilistic_merging/include
+pharos_probabilistic_merging/msg
+pharos_probabilistic_merging/srv
+pharos_probabilistic_merging/vm
+pharos_probabilistic_merging/CMakeLists.txt

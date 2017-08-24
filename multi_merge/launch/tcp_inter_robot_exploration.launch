@@ -64,6 +64,19 @@
         <param name="map_resolution" value="0.05"/>
     </node>
 
+    <!--node pkg="pharos_probabilistic_merging" type="headless" respawn="false" name="pharos_probabilistic_merging" output="screen" args="pharos_probabilistic_mergingpackage_merging">
+        <param name="other_map" value="$(arg neighbor_map)"/>
+        <param name="my_map" value="/pmap"/>
+        <param name="merged_map_topic" value="/global_map"/>
+        <param name="init_x" value="$(arg init_x)"/>
+        <param name="init_y" value="$(arg init_y)"/>
+        <param name="init_z" value="$(arg init_z)"/>
+        <param name="map_update_topic" value="$(arg map_update)"/>
+        <param name="map_width_m" value="60.0"/>
+        <param name="map_height_m" value="60.0"/>
+        <param name="map_resolution" value="0.05"/>
+    </node-->
+
     <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
         <param name="th_value" value="60"/>
         <param name="map_in_topic" value="/global_map"/>
