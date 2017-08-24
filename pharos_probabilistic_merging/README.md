@@ -9,7 +9,7 @@
 pharos create pharos_probabilistic_merging
 rosrun  pharos_probabilistic_merging edit
 
-# the execute from workspace:
+# then execute from workspace:
 
 Gofer new
 url:'http://smalltalkhub.com/mc/lxsang/phaROS_packages/main';
