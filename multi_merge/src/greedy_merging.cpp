@@ -75,6 +75,7 @@ void mege_pipeline(bool furious)
     offset.position.y = abs(offset.position.y);
 
     // fill global map with local content
+    global_map.data.resize(global_map.info.width*global_map.info.height, -1);
     std::fill(global_map.data.begin(), global_map.data.end(), -1);
     for(int i= 0;i < local_map->info.width ; i++)
         for(int j = 0; j < local_map->info.height; j++)
@@ -174,6 +175,30 @@ int get_visible_zone(multi_master_bridge::MapData* data,const nav_msgs::Occupanc
     return 1;
 }
 */
+void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGrid msg)
+{
+    double x,y;
+    int ow,oh;
+    geometry_msgs::Point  delta;
+
+    delta.x = my_pose.position.x - theirpose.x;
+    delta.y = my_pose.position.y - theirpose.y;
+   
+    // min x and min y
+    x = msg.info.origin.position.x - delta.x ;
+    y = msg.info.origin.position.y - delta.y ;
+
+    if(x < global_map.info.origin.position.x)  global_map.info.origin.position.x = x;
+    if(y <  global_map.info.origin.position.y)  global_map.info.origin.position.y = y;
+    
+    // max x and max y
+    ow = msg.info.width + round(delta.x/ msg.info.resolution);
+    oh = msg.info.height + round(delta.y/ msg.info.resolution);
+
+    if(ow > global_map.info.width) global_map.info.width = ow;
+    if(oh > global_map.info.height) global_map.info.height = oh;
+    
+}
 void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
     ROS_INFO("Local map found");
@@ -182,6 +207,7 @@ void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
     visibledata.x = 0;
     visibledata.y = 0;
     visibledata.map = *msg;
+    resolve_mapsize(visibledata.position, *msg);
     map_update_pub.publish(visibledata);
     local_map.reset(new nav_msgs::OccupancyGrid(*msg)); 
 }
@@ -189,6 +215,7 @@ void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 void register_neighbor_map(const multi_master_bridge::MapData::ConstPtr& msg)
 {
     ROS_INFO("Registering neighbor map");
+    resolve_mapsize(msg->position, msg->map);
     pipeline[msg->ip] = *msg;
 }
 
@@ -205,17 +232,13 @@ int main(int argc, char** argv)
     n.param<double>("init_z",my_pose.position.z, 0.0);
 	n.param<double>("init_x",my_pose.position.x, 0.0);
 	n.param<double>("init_y",my_pose.position.y, 0.0);
-    n.param<double>("map_width_m",map_width_m_, 10.0);
-    n.param<double>("map_height_m",map_height_m_, 10.0);
     n.param<double>("map_resolution",map_resolution_, 0.05);
-    int w =  round((map_width_m_ )/map_resolution_);
-    int h = round((map_height_m_ )/map_resolution_);
-    global_map.data.resize(w*h,-1);
-    global_map.info.width = w;
-    global_map.info.height = h;
+   
+    global_map.info.width = 0;
+    global_map.info.height = 0;
     global_map.info.resolution = map_resolution_;
-    global_map.info.origin.position.x = -map_width_m_/2.0;
-    global_map.info.origin.position.y = -map_height_m_/2.0;
+    global_map.info.origin.position.x =0.0;
+    global_map.info.origin.position.y = 0.0;
     global_map.info.origin.position.z = 0.0;
     global_map.info.origin.orientation.x = 0.0;
     global_map.info.origin.orientation.y = 0.0;

@@ -7,15 +7,6 @@
     <arg name="neighbor_map" default="/neighbor_map"/>
     <arg name="map_update" default="/map_update"/>
     <arg name = "global_map_topic" default="/map" />
-    <!--
-        TOP
-        x: 0.839603688789
-        y: -0.854292340825
-
-        BOT
-        x: -0.839603688789
-        y: -0.854292340825
-    -->
     
     <node pkg="multi_master_bridge" type="portal" respawn="false" name="portal" output="screen" launch-prefix="" /> 
 
@@ -31,7 +22,8 @@
         <param name="listen_interface" value="$(arg iface)"/>
     </node>
 
-    <!--node pkg="multi_merge" type="greedy_merging" respawn="false" name="greedy_merging" output="screen" launch-prefix="">
+    <!-- GREEDY MERGING -->
+    <node pkg="multi_merge" type="greedy_merging" respawn="false" name="greedy_merging" output="screen" launch-prefix="">
         <param name="other_map" value="$(arg neighbor_map)"/>
         <param name="my_map" value="/local_map"/>
         <param name="merged_map_topic" value="$(arg global_map_topic)"/>
@@ -40,8 +32,6 @@
         <param name="init_z" value="$(arg init_z)"/>
         <param name="map_update_topic" value="$(arg map_update)"/>
         <param name="furious_merge" value="false"/>
-        <param name="map_width_m" value="60"/>
-        <param name="map_height_m" value="60"/>
         <param name="map_resolution" value="0.05"/>
     </node>
 
@@ -49,9 +39,10 @@
         <param name="th_value" value="60"/>
         <param name="map_in_topic" value="/pmap"/>
         <param name="map_out_topic" value="/local_map"/>
-    </node-->
+    </node>
 
-    <node pkg="multi_merge" type="probabilistic_merging" respawn="false" name="probabilistic_merging" output="screen" launch-prefix="">
+    <!-- PROBABILISTIC MERGING -->
+    <!--node pkg="multi_merge" type="probabilistic_merging" respawn="false" name="probabilistic_merging" output="screen" launch-prefix="">
         <param name="other_map" value="$(arg neighbor_map)"/>
         <param name="my_map" value="/pmap"/>
         <param name="merged_map_topic" value="/global_map"/>
@@ -59,10 +50,13 @@
         <param name="init_y" value="$(arg init_y)"/>
         <param name="init_z" value="$(arg init_z)"/>
         <param name="map_update_topic" value="$(arg map_update)"/>
-        <param name="map_width_m" value="60"/>
-        <param name="map_height_m" value="60"/>
         <param name="map_resolution" value="0.05"/>
     </node>
+    <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
+        <param name="th_value" value="60"/>
+        <param name="map_in_topic" value="/global_map"/>
+        <param name="map_out_topic" value="$(arg global_map_topic)"/>
+    </node-->
 
     <!--node pkg="pharos_probabilistic_merging" type="headless" respawn="false" name="pharos_probabilistic_merging" output="screen" args="pharos_probabilistic_mergingpackage_merging">
         <param name="other_map" value="$(arg neighbor_map)"/>
@@ -77,12 +71,6 @@
         <param name="map_resolution" value="0.05"/>
     </node-->
 
-    <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
-        <param name="th_value" value="60"/>
-        <param name="map_in_topic" value="/global_map"/>
-        <param name="map_out_topic" value="$(arg global_map_topic)"/>
-    </node>
-
      <node pkg="multi_master_bridge" type="map_feeding" respawn="false" name="map_exchange" output="screen" launch-prefix="">
      <!-- gdb -ex run ~~args -->
         <param name="publish_to" value="$(arg neighbor_map)"/>
@@ -90,15 +78,6 @@
         <param name="map_update_topic" value="$(arg map_update)"/>
         <param name="sending_rate" value="0.5" />
     </node>
-
-    <!--node pkg="multi_master_bridge" type="init_map_for_newcommer" respawn="false" name="init_map_for_newcommer" output="screen" launch-prefix="">
-        <param name="publish_to" value="$(arg neighbor_map)"/>
-        <param name="network_interface" value="$(arg iface)"/>
-        <param name="init_x" value="$(arg init_x)"/>
-        <param name="init_y" value="$(arg init_y)"/>
-        <param name="init_z" value="$(arg init_z)"/>
-        <param name="map_topic" value="/local_map"/>
-    </node-->
   
     <include file="$(find multi_merge)/launch/cartographer_minimal.launch" />
     <include file="$(find multi_merge)/launch/move_base.launch" />
@@ -142,8 +121,8 @@
     <param name="frontier_topic" value="phrontier_global"/>
   </node>
 
-    <!--node pkg="simple_exploration" type="simple_exploration" name="simple_exploration">
-    </node-->
+    <node pkg="simple_exploration" type="simple_exploration" name="simple_exploration">
+    </node>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_merge)/launch/exploration.rviz"/>
 </launch>

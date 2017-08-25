@@ -37,6 +37,34 @@ void getRelativePose(geometry_msgs::Pose p, geometry_msgs::Pose q, geometry_msgs
     delta.position.z = round((p.position.z - q.position.z) / resolution);
 }
 
+void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGrid::ConstPtr& msg)
+{
+    double x,y;
+    int ow,oh;
+    geometry_msgs::Point  delta;
+
+    delta.x = mypose.position.x - theirpose.x;
+    delta.y = mypose.position.y - theirpose.y;
+   
+    // min x and min y
+    x = msg->info.origin.position.x - delta.x ;
+    y = msg->info.origin.position.y - delta.y ;
+
+    if(x < global_map.info.origin.position.x)  global_map.info.origin.position.x = x;
+    if(y <  global_map.info.origin.position.y)  global_map.info.origin.position.y = y;
+    
+    // max x and max y
+    ow = msg->info.width + round(delta.x/ msg->info.resolution);
+    oh = msg->info.height + round(delta.y/ msg->info.resolution);
+    //w = msg->info.width + delta.position.x;
+    //h = msg->info.height + delta.position.y;
+
+    if(ow > global_map.info.width) global_map.info.width = ow;
+    if(oh > global_map.info.height) global_map.info.height = oh;
+    ROS_INFO("XY (%f %f) map: (%f %f), (%f %f)", global_map.info.origin.position.x,global_map.info.origin.position.y, msg->info.origin.position.x, msg->info.origin.position.y, x, y);
+    /*ROS_INFO("WH (%d %d) map: (%d %d)", maxw,maxh, msg->info.width, msg->info.height);*/
+}
+
 void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
     multi_master_bridge::MapData mdata;
@@ -44,8 +72,10 @@ void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
     mdata.position.y = 0.0;
     mdata.position.z = 0.0;
     mdata.map = *msg;
+    resolve_mapsize(mdata.position, msg);
     pipeline["local"] = mdata;
 }
+
 void register_local_map_1(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
     multi_master_bridge::MapData mdata;
@@ -53,6 +83,7 @@ void register_local_map_1(const nav_msgs::OccupancyGrid::ConstPtr& msg)
     mdata.position.y = -1.03;
     mdata.position.z = 0.0;
     mdata.map = *msg;
+    resolve_mapsize(mdata.position, msg);
     pipeline["local_1"] = mdata;
 }
 void register_local_map_2(const nav_msgs::OccupancyGrid::ConstPtr& msg)
@@ -62,12 +93,14 @@ void register_local_map_2(const nav_msgs::OccupancyGrid::ConstPtr& msg)
     mdata.position.y = -1.03;
     mdata.position.z = 0.0;
     mdata.map = *msg;
+    resolve_mapsize(mdata.position, msg);
     pipeline["local_2"] = mdata;
 }
 
 void mege_pipeline()
 {
     // reset global map
+    global_map.data.resize(global_map.info.width*global_map.info.height, -1);
     std::fill(global_map.data.begin(), global_map.data.end(), -1);
     // calculate probability for each cell
     double odds = 1.0, oddsi = 0.0;
@@ -118,14 +151,14 @@ int main(int argc, char** argv)
     ros::Subscriber sub1 = n.subscribe<nav_msgs::OccupancyGrid>("/pmap_1", 50,&register_local_map_1);
     ros::Subscriber sub2 = n.subscribe<nav_msgs::OccupancyGrid>("/pmap_2", 50,&register_local_map_2);
     global_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/global_map", 50, true);
-    int w =  round((60.0 )/0.05);
+    /*int w =  round((60.0 )/0.05);
     int h = round((60.0 )/0.05);
-    global_map.data.resize(w*h,-1);
-    global_map.info.width = w;
-    global_map.info.height = h;
+    global_map.data.resize(w*h,-1);*/
+    global_map.info.width = 0;
+    global_map.info.height = 0;
     global_map.info.resolution = 0.05;
-    global_map.info.origin.position.x = -30.0;
-    global_map.info.origin.position.y = -30.0;
+    global_map.info.origin.position.x = 0.0;
+    global_map.info.origin.position.y = 0.0;
     global_map.info.origin.position.z = 0.0;
     global_map.info.origin.orientation.x = 0.0;
     global_map.info.origin.orientation.y = 0.0;
