@@ -45,6 +45,8 @@ void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGri
 
     delta.x = mypose.position.x - theirpose.x;
     delta.y = mypose.position.y - theirpose.y;
+    if(delta.x < 0) delta.x = 0.0;
+    if(delta.y < 0) delta.y = 0.0;
    
     // min x and min y
     x = msg->info.origin.position.x - delta.x ;
@@ -54,13 +56,13 @@ void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGri
     if(y <  global_map.info.origin.position.y)  global_map.info.origin.position.y = y;
     
     // max x and max y
-    ow = msg->info.width + round(delta.x/ msg->info.resolution);
-    oh = msg->info.height + round(delta.y/ msg->info.resolution);
+    ow = msg->info.width + round(delta.x/ msg->info.resolution) + 50;
+    oh = msg->info.height + round(delta.y/ msg->info.resolution) + 50;
     //w = msg->info.width + delta.position.x;
     //h = msg->info.height + delta.position.y;
 
-    if(ow > global_map.info.width) global_map.info.width = ow;
-    if(oh > global_map.info.height) global_map.info.height = oh;
+    if(ow > global_map.info.width) global_map.info.width = ow ;
+    if(oh > global_map.info.height) global_map.info.height = oh ;
     ROS_INFO("XY (%f %f) map: (%f %f), (%f %f)", global_map.info.origin.position.x,global_map.info.origin.position.y, msg->info.origin.position.x, msg->info.origin.position.y, x, y);
     /*ROS_INFO("WH (%d %d) map: (%d %d)", maxw,maxh, msg->info.width, msg->info.height);*/
 }
@@ -164,8 +166,8 @@ int main(int argc, char** argv)
     global_map.info.origin.orientation.y = 0.0;
     global_map.info.origin.orientation.z = 0.0;
     global_map.info.origin.orientation.w = 1.0;
-    mypose.position.x = 0.0;
-    mypose.position.y = 0.0;
+    mypose.position.x = -0.75;
+    mypose.position.y = -1.03;
     mypose.position.z = 0.0;
     ros::Rate r(1);
 

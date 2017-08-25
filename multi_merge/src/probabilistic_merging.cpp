@@ -47,6 +47,8 @@ void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGri
 
     delta.x = mypose.position.x - theirpose.x;
     delta.y = mypose.position.y - theirpose.y;
+    if(delta.x < 0) delta.x = 0.0;
+    if(delta.y < 0) delta.y = 0.0;
    
     // min x and min y
     x = msg.info.origin.position.x - delta.x ;

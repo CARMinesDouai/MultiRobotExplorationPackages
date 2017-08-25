@@ -68,15 +68,17 @@ void mege_pipeline(bool furious)
         ROS_INFO("Local map not found, wait for it");
         return;
     }
+    // fill global map with local content
+    global_map.data.resize(global_map.info.width*global_map.info.height, -1);
+    std::fill(global_map.data.begin(), global_map.data.end(), -1);
+
     std::map<std::string,  multi_master_bridge::MapData>::iterator it;
     geometry_msgs::Pose offset;
     getRelativePose(global_map.info.origin, local_map->info.origin, offset, local_map->info.resolution);
     offset.position.x = abs(offset.position.x);
     offset.position.y = abs(offset.position.y);
 
-    // fill global map with local content
-    global_map.data.resize(global_map.info.width*global_map.info.height, -1);
-    std::fill(global_map.data.begin(), global_map.data.end(), -1);
+    
     for(int i= 0;i < local_map->info.width ; i++)
         for(int j = 0; j < local_map->info.height; j++)
             if(local_map->data[i + j*local_map->info.width] != -1)
@@ -183,6 +185,8 @@ void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGri
 
     delta.x = my_pose.position.x - theirpose.x;
     delta.y = my_pose.position.y - theirpose.y;
+    if(delta.x < 0) delta.x = 0.0;
+    if(delta.y < 0) delta.y = 0.0;
    
     // min x and min y
     x = msg.info.origin.position.x - delta.x ;
