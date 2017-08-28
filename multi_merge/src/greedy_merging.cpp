@@ -196,8 +196,8 @@ void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGri
     if(y <  global_map.info.origin.position.y)  global_map.info.origin.position.y = y;
     
     // max x and max y
-    ow = msg.info.width + round(delta.x/ msg.info.resolution);
-    oh = msg.info.height + round(delta.y/ msg.info.resolution);
+    ow = msg.info.width + round(delta.x/ msg.info.resolution) + 50;
+    oh = msg.info.height + round(delta.y/ msg.info.resolution) + 50;
 
     if(ow > global_map.info.width) global_map.info.width = ow;
     if(oh > global_map.info.height) global_map.info.height = oh;

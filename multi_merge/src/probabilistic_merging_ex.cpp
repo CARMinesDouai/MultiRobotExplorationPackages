@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     global_map.info.origin.orientation.y = 0.0;
     global_map.info.origin.orientation.z = 0.0;
     global_map.info.origin.orientation.w = 1.0;
-    mypose.position.x = -0.75;
+    mypose.position.x = 0.83;
     mypose.position.y = -1.03;
     mypose.position.z = 0.0;
     ros::Rate r(1);
