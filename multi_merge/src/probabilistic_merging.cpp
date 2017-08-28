@@ -42,28 +42,46 @@ void getRelativePose(geometry_msgs::Pose p, geometry_msgs::Pose q, geometry_msgs
 void resolve_mapsize(geometry_msgs::Point theirpose,const nav_msgs::OccupancyGrid msg)
 {
     double x,y;
-    int ow,oh;
+    int ow,oh,w,h;
     geometry_msgs::Point  delta;
 
     delta.x = mypose.position.x - theirpose.x;
     delta.y = mypose.position.y - theirpose.y;
+
+    // max w and max h
+    w = (int)global_map.info.width  ;
+    h = (int)global_map.info.height ;
+    ow = (int)msg.info.width + round(fabs(delta.x/ msg.info.resolution));
+    oh = (int)msg.info.height + round(fabs(delta.y/ msg.info.resolution));
+    
     if(delta.x < 0) delta.x = 0.0;
     if(delta.y < 0) delta.y = 0.0;
    
+       
     // min x and min y
     x = msg.info.origin.position.x - delta.x ;
     y = msg.info.origin.position.y - delta.y ;
 
-    if(x < global_map.info.origin.position.x)  global_map.info.origin.position.x = x;
-    if(y <  global_map.info.origin.position.y)  global_map.info.origin.position.y = y;
+    if(x < global_map.info.origin.position.x)  
+    {
+        double dx = global_map.info.origin.position.x - x;
+        ow =  (int)msg.info.width;
+        w += round(dx/ msg.info.resolution);
+        global_map.info.origin.position.x = x;   
+    }
+    if(y <  global_map.info.origin.position.y) {
+        double dy =  global_map.info.origin.position.y - y;
+        global_map.info.origin.position.y = y;
+        oh = (int)msg.info.height;
+        h += round(dy/ msg.info.resolution);
+        //h = h ;
+    }
     
-    // max x and max y
-    ow = msg.info.width + round(delta.x/ msg.info.resolution) + 50; // bonus
-    oh = msg.info.height + round(delta.y/ msg.info.resolution) + 50;
+    w = w>ow?w:ow;
+    h = oh>h?oh:h;
 
-    if(ow > global_map.info.width) global_map.info.width = ow;
-    if(oh > global_map.info.height) global_map.info.height = oh;
-    
+    global_map.info.width = w ;
+    global_map.info.height = h ;
 }
 
 void register_local_map(const nav_msgs::OccupancyGrid::ConstPtr& msg)
