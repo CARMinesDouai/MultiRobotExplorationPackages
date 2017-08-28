@@ -34,11 +34,11 @@ extern "C"
 #include "../helpers/DataConsumer.h"
 static int sockfd=-1;
 ros::Publisher pub;
-pthread_mutex_t publishing_mutex;
+//pthread_mutex_t publishing_mutex;
 
 void callback(struct portal_data_t d)
 {
-    pthread_mutex_lock(&publishing_mutex);
+    //pthread_mutex_lock(&publishing_mutex);
     try{
 	    ros::Publisher* dpub = NULL;
 	    DataConsumer consumer;
@@ -49,7 +49,7 @@ void callback(struct portal_data_t d)
     {
         ROS_INFO("PROBLEM: %s", msg);
     }
-    pthread_mutex_unlock(&publishing_mutex);
+    //pthread_mutex_unlock(&publishing_mutex);
 }
 void sig_handle(int s)
 {
