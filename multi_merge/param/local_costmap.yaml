@@ -6,10 +6,10 @@ local_costmap:
   resolution: 0.025
   static_map: false
   rolling_window: true
-  width: 6.0
-  height: 6.0
+  width: 4.0
+  height: 4.0
   origin_x: 0.0
   origin_y: 0.0
-  inflation_radius: 0.25
   observation_sources: base_scan
   base_scan: {sensor_frame: laser, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+  inflation_radius: 0.2

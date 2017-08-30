@@ -14,3 +14,4 @@ TrajectoryPlannerROS:
 #Trajectory Scoring Parameters
   pdist_scale: 2.0
   heading_lookahead: 0.178
+  meter_scoring: true

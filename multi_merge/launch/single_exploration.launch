@@ -38,7 +38,7 @@
         map_topic: /map
         subscribe_to_updates: true 
       inflation:
-        inflation_radius: 0.25
+        inflation_radius: 0.4
 
     </rosparam>
   </node>

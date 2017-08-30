@@ -135,7 +135,7 @@ void mege_pipeline()
                     continue;
                 // now get the cell
                 double cell = (double)it->second.map.data[di + dj*it->second.map.info.width];
-                if(cell == -1.0) continue;
+                if(cell == -1.0 || cell == 100.0) continue;
                 oddsi = cell/ (100.0-cell);
 
                 odds *= oddsi;
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
     // publisher register
     global_map_pub = n.advertise<nav_msgs::OccupancyGrid>(merged_map_topic, 50, true);
     map_update_pub = n.advertise<multi_master_bridge::MapData>(map_update_, 50, true);
-    ros::Rate r(1);
+    ros::Rate r(10);
     while(ros::ok())
     {
         ros::spinOnce();
