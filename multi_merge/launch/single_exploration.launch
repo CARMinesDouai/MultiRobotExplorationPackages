@@ -48,8 +48,8 @@
     <param name="frontier_topic" value="phrontier_global"/>
   </node>
 
-    <node pkg="simple_exploration" type="simple_exploration" name="simple_exploration">
-    </node>
+    <!--node pkg="simple_exploration" type="simple_exploration" name="simple_exploration">
+    </node-->
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_merge)/launch/exploration.rviz"/>
 </launch>

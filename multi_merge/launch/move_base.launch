@@ -14,7 +14,7 @@
 
     <rosparam file="$(find multi_merge)/param/global_costmap.yaml" command="load" />  
     <rosparam file="$(find multi_merge)/param/local_costmap.yaml" command="load" />
-    <rosparam file="$(find multi_merge)/param/global_planner_params.yaml" command="load" />
+    <!--rosparam file="$(find multi_merge)/param/global_planner_params.yaml" command="load" /-->
     <!--rosparam file="$(find multi_merge)/param/navfn_global_planner_params.yaml" command="load" /-->
 
     <rosparam file="$(find multi_merge)/param/move_base.yaml" command="load" />

@@ -1,12 +1,13 @@
 <launch>
     <arg name="iface" default="wlo1" />
     <arg name="port" default="9196" />
-    <arg name="init_x" default="0.83"/>
-    <arg name="init_y" default="-1.03"/>
-    <arg name="init_z" default="0.0"/>
+    <arg name="init_x" default="4.17740601872"/> <!--0.83-->
+    <arg name="init_y" default="-2.26276757779"/> <!--n1.03-->
+    <arg name="init_z" default="-0.0256787332934"/>
     <arg name="neighbor_map" default="/neighbor_map"/>
     <arg name="map_update" default="/map_update"/>
     <arg name = "global_map_topic" default="/map" />
+
     
     <node pkg="multi_master_bridge" type="portal" respawn="false" name="portal" output="screen" launch-prefix="" /> 
 
@@ -76,7 +77,7 @@
         <param name="publish_to" value="$(arg neighbor_map)"/>
         <param name="network_interface" value="$(arg iface)"/>
         <param name="map_update_topic" value="$(arg map_update)"/>
-        <param name="sending_rate" value="0.5" />
+        <param name="sending_rate" value="0.2" />
     </node>
   
     <include file="$(find multi_merge)/launch/cartographer_minimal.launch" />
@@ -111,7 +112,7 @@
         map_topic: /map
         subscribe_to_updates: true 
       inflation:
-        inflation_radius: 0.4
+        inflation_radius: 0.3
 
     </rosparam>
   </node>
