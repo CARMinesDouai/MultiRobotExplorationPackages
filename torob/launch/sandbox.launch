@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!--node  pkg="torob" type="move" name="torob_move" >
+    <param name="frame_id" value="laser"/>
+    <param name="scan_topic" value="/scan" />
+    <param name="perception_distance" value="6.2" />
+    <param name="goal_frame_id" value="base_link" />
+    <param name="cmd_frame_id" value="base_link" />
+  </node-->
+
+  <!--node  pkg="torob" type="viewer" name="view_local_map" >
+    <param name="vmap_topic" value="/scan_vmap" />
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="laser_in_base"
+        args="0.03 0.0 0.0 0.0 0.0 0.0 base_link base_laser_link 50" /-->
+
+  <!--include file="$(find turtlebot_bringup)/launch/minimal.launch" /-->
+  <!-- include file="$(find turtlebot_navigation)/launch/includes/gmapping.launch.xml" -->
+  <!-- include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml" / -->
+  
+  <!--node  pkg="urg_node" type="urg_node" name="laser" /-->
+  
+  <!-- node pkg="rosbag" type="play" name="rosbag" args="$(find torob)/../../resources/bag/Mapping1.bag">
+    <remap from="/base_scan" to="/scan"/>
+  </node -->
+  
+</launch>
+

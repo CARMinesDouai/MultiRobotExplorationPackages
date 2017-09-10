@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Standard -->
+  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml" />
+
+  <!-- joystick -->
+  <node pkg="joy" type="joy_node" name="joy_node">
+    <param name="joy_node/dev" value="/dev/input/js0"/>
+  </node>
+  <include file="$(find turtlebot_teleop)/launch/xbox360_teleop.launch"/>
+</launch>

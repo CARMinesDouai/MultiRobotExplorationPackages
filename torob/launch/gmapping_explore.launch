@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- turtlebot -->
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
+  <include file="$(find turtlebot_navigation)/launch/includes/gmapping/gmapping.launch.xml" />
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="robot_pose_publisher"/>
+
+  <!-- laser -->
+  <node  pkg="urg_node" type="urg_node" name="urg_node" >
+    <param name="angle_min" value="-1.6"/>
+    <param name="angle_max" value="1.6"/>
+  </node>
+ 
+  <node pkg="tf" type="static_transform_publisher" name="laser_in_base_link"
+    args="0.03 0.0 0.0 0.0 0.0 0.0 /base_link /laser 80" />
+
+  <!-- grid to vmap convertion -->
+  <node pkg="torob" type="map_to_vmap" name="torob_vmap" />
+
+  <!-- Random move -->
+  <!--node pkg="torob" type="random_goal" name="goal" output="screen">
+      <param name="duration" value="5"/>
+      <param name="min_distance" value="1.5"/>
+      <param name="max_distance" value="3"/>
+      <param name="max_angle" value="1.8"/>
+  </node-->
+
+  <node pkg="torob" type="move" name="move" output="screen">
+      <param name="robot_radius" value="0.25"/>
+      <param name="perception_distance" value="1.0"/>
+      <param name="goal_frame_id" value="odom"/>
+      <param name="init_goal_x" value="2.0" />
+      <param name="init_goal_y" value="-0.5" />
+      <param name="linear_speed" value="0.2" />
+      <param name="angular_speed" value="1.2" />
+  </node>
+
+  <!-- reporting -->
+  <node pkg="torob" type="viewer" name="scan_vmap_view" output="screen">
+      <param name="vmap_topic" value="/scan_vmap"/>
+      <param name="scan_topic" value="/scan"/>
+      <param name="scale" value="240.0" />
+  </node>
+
+  <!-- Web -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+</launch>
+

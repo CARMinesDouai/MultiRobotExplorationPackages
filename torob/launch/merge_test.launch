@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node  pkg="torob" type="merge" name="merge" >
+    <!-- This robot vma topic name -->
+    <param name="vmap_topic" value="/vmap"/>
+    
+    <!-- first friend robot vmap topic name: -->
+    <param name="vmap1_topic" value="/vmap1"/>
+    
+    <!-- Transtation information to merge first friend robot into this robot -->
+    <param name="translation1x" value="0."/>
+    <param name="translation1y" value="0."/>
+    
+    <!-- second friend robot -->
+    <param name="vmap2_topic" value="/vmap2"/>
+    <param name="translation2x" value="0."/>
+    <param name="translation1y" value="0."/>
+  </node>
+
+  
+  <arg name="file0" default="$(find torob)/../../resources/map/k7_4.yaml"/>
+  <arg name="map0" default="/map"/>
+  <arg name="vmap0" default="/vmap"/>
+  
+  <arg name="file1" default="$(find torob)/../../resources/map/k7_1.yaml"/>
+  <arg name="map1" default="/map1"/>
+  <arg name="vmap1" default="/vmap1"/>
+  
+  <arg name="file2" default="$(find torob)/../../resources/map/k7_2.yaml"/>
+  <arg name="map2" default="/map2"/>
+  <arg name="vmap2" default="/vmap2"/>
+  
+  <node  pkg="torob" type="map_to_vmap" name="map_to_vmap0" >
+    <param name="map_topic" value="$(arg map0)"/>
+    <param name="vmap_topic" value="$(arg vmap0)"/>
+  </node>
+  <node  pkg="torob" type="viewer" name="viewer0" >
+    <param name="vmap_topic" value="$(arg vmap0)"/>
+  </node>
+  <node name="map_server0" pkg="map_server" type="map_server" args="$(arg file0)">
+    <remap from="/map" to="$(arg map0)"/>
+  </node>
+  
+  <node  pkg="torob" type="map_to_vmap" name="map_to_vmap1" >
+    <param name="map_topic" value="$(arg map1)"/>
+    <param name="vmap_topic" value="$(arg vmap1)"/>
+  </node>
+  <node  pkg="torob" type="viewer" name="viewer1" >
+    <param name="vmap_topic" value="$(arg vmap1)"/>
+  </node>
+  <node name="map_server1" pkg="map_server" type="map_server" args="$(arg file1)">
+    <remap from="/map" to="$(arg map1)"/>
+  </node>
+
+    <node  pkg="torob" type="map_to_vmap" name="map_to_vmap2" >
+    <param name="map_topic" value="$(arg map2)"/>
+    <param name="vmap_topic" value="$(arg vmap2)"/>
+  </node>
+  <node  pkg="torob" type="viewer" name="viewer2" >
+    <param name="vmap_topic" value="$(arg vmap2)"/>
+  </node>
+  <node name="map_server2" pkg="map_server" type="map_server" args="$(arg file2)">
+    <remap from="/map" to="$(arg map2)"/>
+  </node>
+  
+  
+  <node  pkg="torob" type="viewer" name="viewerMerged" >
+    <param name="vmap_topic" value="/merged_vmap"/>
+  </node>
+  
+</launch>
+

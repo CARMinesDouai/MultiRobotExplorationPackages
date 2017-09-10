@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node  pkg="urg_node" type="urg_node" name="urg_node" >
+    <param name="angle_min" value="-1.6"/>
+    <param name="angle_max" value="1.6"/>
+  </node>
+ 
+  <node pkg="tf" type="static_transform_publisher" name="laser_in_base_link"
+    args="0.03 0.0 0.0 0.0 0.0 0.0 /base_link /laser 80" />
+
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
+
+  <node pkg="torob" type="random_goal" name="goal" output="screen">
+      <param name="duration" value="5"/>
+      <param name="min_distance" value="0.5"/>
+      <param name="max_distance" value="3"/>
+      <param name="max_angle" value="1.8"/>
+  </node>
+
+  <node pkg="torob" type="move" name="move" output="screen">
+      <param name="robot_radius" value="0.2"/>
+      <param name="perception_distance" value="1.0"/>
+      <param name="goal_frame_id" value="odom"/>
+      <param name="init_goal_x" value="2.0" />
+      <param name="init_goal_y" value="-0.5" />
+      <param name="linear_speed" value="0.2" />
+      <param name="angular_speed" value="1.2" />
+  </node>
+
+  <node pkg="torob" type="net_send" name="net_send">
+    <param name="vmap_topic"  value="/scan_vmap" />
+    <param name="number_addr" value="1" />
+    <param name="addr_1"      value="10.1.16.41" />
+    <param name="port"        value="1414" />
+  </node>
+
+  <node pkg="torob" type="viewer" name="scan_vmap_view">
+      <param name="vmap_topic" value="/scan_vmap"/>
+  </node>
+
+</launch>

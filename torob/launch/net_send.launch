@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="robot_name" value="tb2"/>
+
+  <!--node pkg="torob" type="map_to_vmap" name="map_to_vmap" output="screen" / -->
+  <node pkg="torob" type="vmap_server" name="vmap_server" output="screen" >
+    <param name="vmap_file"  value="$(find torob)/map/map_14.vmap" />
+    <param name="vmap_topic"  value="/$(arg robot_name)/vmap" />
+    <param name="duration"  value="2.0" />
+  </node>
+
+  <node pkg="torob" type="net_send" name="net_send" output="screen" >
+    <param name="vmap_topic"  value="/$(arg robot_name)/vmap" />
+    <param name="number_addr" value="1" />
+<!--    <param name="addr_1"      value="10.89.1.81" />     -->
+    <param name="addr_1"      value="10.1.16.75" />
+    <param name="addr_2"      value="10.1.16.45" />
+    <param name="port"        value="1414" />
+
+  </node>
+
+</launch>
+
