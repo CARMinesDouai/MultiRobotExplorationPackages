@@ -1,3 +1,24 @@
+/**
+Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
 #ifndef ADAPTIVE_LOCAL_PLANNER
 #define ADAPTIVE_LOCAL_PLANNER
 
@@ -71,7 +92,7 @@ class AdaptiveLocalPlanner : public nav_core::BaseLocalPlanner
     std::string scan_topic;
     double attractive_gain, repulsive_gain, safe_goal_dist, safe_obs_dist,max_local_goal_dist;
     std::vector<geometry_msgs::PoseStamped> global_plan;
-    bool initialized_;
+    bool initialized_,verbose;
     bool reached;
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;

@@ -70,13 +70,13 @@
       <param name="robot_radius" value="0.25"/>
       <param name="perception_distance" value="1.0"/>
       <param name="goal_frame_id" value="map"/>
-      <param name="init_goal_x" value="0.0" />
-      <param name="init_goal_y" value="0.0" />
+      <param name="init_goal_x" value="2.0" />
+      <param name="init_goal_y" value="4.0" />
       <param name="linear_speed" value="0.2" />
       <param name="angular_speed" value="1.2" />
-  </node-->
+  </node>
 
-  <!--node pkg="torob" type="viewer" name="scan_vmap_view" output="screen">
+  <node pkg="torob" type="viewer" name="scan_vmap_view" output="screen">
       <param name="vmap_topic" value="/scan_vmap"/>
       <param name="scan_topic" value="/scan"/>
       <param name="scale" value="100.0" />

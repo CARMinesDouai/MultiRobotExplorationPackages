@@ -1,3 +1,25 @@
+/**
+Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
+
 #include "adaptive_local_planner.h"
 #include <pluginlib/class_list_macros.h>
 
@@ -27,8 +49,7 @@ map<int, geometry_msgs::Point> AdaptiveLocalPlanner::cc_min_dist_to_robot()
     // init
     for (it = cclo.labels.begin(); it != cclo.labels.end(); it++)
     {
-        if (cclo.labels_tree[*it].cnt < min_obstacle_size_px)
-            continue;
+        if (cclo.labels_tree[*it].cnt < min_obstacle_size_px) continue;
         obs[*it] = dist;
     }
     geometry_msgs::Point offset;
@@ -43,8 +64,7 @@ map<int, geometry_msgs::Point> AdaptiveLocalPlanner::cc_min_dist_to_robot()
             cell = cclo.data[idx];
             if (cell != -1)
             {
-                if (cclo.labels_tree[cell].cnt < min_obstacle_size_px)
-                    continue;
+                if (cclo.labels_tree[cell].cnt < min_obstacle_size_px) continue;
                 dist.x = i * resolution - offset.x;
                 dist.y = j * resolution - offset.y;
                 dist.z = this->dist(dist);
@@ -128,7 +148,7 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
         fatt.y = goal.pose.position.y * safe_goal_dist / robot_to_goal;
     }
 
-    // repulsive potential to the nearest obstacle
+    // repulsive potential to the nearest obstacles
 
     int i, j, npix = 0;
 
@@ -152,30 +172,30 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
         // cmd_vel.angular.z += atan2(frep.y, frep.z) -  tf::getYaw(pose.pose.orientation);
     }
 
-    ROS_INFO("attractive: %f, %f Respulsive: %f %f", fatt.x, fatt.y, frep.x, frep.y);
+    if(verbose)
+        ROS_INFO("attractive: %f, %f Respulsive: %f %f", fatt.x, fatt.y, frep.x, frep.y);
     // now calculate the velocity
     tf::Vector3 cmd;
     cmd.setX(fatt.x + frep.x);
     cmd.setY(fatt.y + frep.y);
+
     cmd = localToCmd * cmd;
     double yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
+
     cmd_vel.linear.x = cmd.x();
     cmd_vel.linear.y = cmd.y();
     cmd_vel.linear.z = 0.0;
-
-    //-fatt.x *(sin(mypose.)+yb_corner[i].getOrigin().y()*cos(tf_yb_origin_yaw)) +
-
-    //d_u_att_y * (yb_corner[i].getOrigin().x()*cos(tf_yb_origin_yaw)-yb_corner[i].getOrigin().y()*sin(tf_yb_origin_yaw));
-
     cmd_vel.angular.x = 0.0;
     cmd_vel.angular.y = 0.0; // ?
     cmd_vel.angular.z = yaw;
-    ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
+
+    if(verbose)
+        ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
     return true;
 }
 /*
-    get my pose on the goal frame
+    get my pose on the base_link frame
 */
 bool AdaptiveLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
 {
@@ -186,7 +206,7 @@ bool AdaptiveLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
     }
     catch (tf::TransformException ex)
     {
-        ROS_ERROR("Cannot get transform %s-%s: %s", this->goal_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
+        ROS_ERROR("Cannot get transform %s-%s: %s", this->cmd_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
         return false;
     }
 
@@ -288,6 +308,7 @@ void AdaptiveLocalPlanner::initialize(std::string name, tf::TransformListener *t
         private_nh.param<double>("safe_obs_dist", this->safe_obs_dist, 1.0);
         private_nh.param<double>("max_local_goal_dist", this->max_local_goal_dist, 0.5);
         private_nh.param<int>("min_obstacle_size_px", this->min_obstacle_size_px, 20);
+        private_nh.param<bool>("verbose", this->verbose, true);
         private_nh.param<double>("field_w", dw, 2.0);
         private_nh.param<double>("field_h", dh, 2.0);
 
