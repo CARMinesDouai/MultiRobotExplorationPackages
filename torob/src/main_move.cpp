@@ -12,7 +12,7 @@ using namespace std;
 // global element :
 RosVmap * _vmap;
 tf::Vector3 _goal;
-std::string _goal_frame_id;
+std::string _next_goal_frame_id, _goal_frame_id;
 std::string _cmd_frame_id;
 
 ros::Publisher _vmap_publisher;
@@ -51,9 +51,10 @@ int main(int argc, char **argv)
     float goal_x, goal_y;
 
     if( !node_private.getParam("goal_topic", goal_topic) ) goal_topic= "move_base_simple/goal";
-    if( !node_private.getParam("goal_frame_id", _goal_frame_id) ) _goal_frame_id= "odom";
+    if( !node_private.getParam("goal_frame_id", _next_goal_frame_id) ) _next_goal_frame_id= "odom";
     if( !node_private.getParam("init_goal_x", goal_x) ) goal_x= 0.f;
     if( !node_private.getParam("init_goal_y", goal_y) ) goal_y= 0.f;
+    if( !node_private.getParam("init_goal_frame_id", _goal_frame_id) ) _goal_frame_id= "odom";
 
     if( !node_private.getParam("cmd_topic", cmd_topic) ) cmd_topic= "/cmd_vel_mux/input/navi";
     if( !node_private.getParam("cmd_frame_id", _cmd_frame_id) ) _cmd_frame_id= "base_link";
@@ -95,9 +96,11 @@ int main(int argc, char **argv)
 }
 
 void goal_subscriber(const geometry_msgs::PoseStamped & g){
-    
+
   cout << "goal_subscriber" << endl;
-  
+
+  _goal_frame_id= _next_goal_frame_id;
+
   _goal.setX( g.pose.position.x );
   _goal.setY( g.pose.position.y );
   _goal.setZ( g.pose.position.z );
@@ -165,7 +168,7 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
   
   tf::StampedTransform scanToCmd;
   try{
-    _listener->lookupTransform( scan.header.frame_id, _cmd_frame_id,
+    _listener->lookupTransform(  _cmd_frame_id, scan.header.frame_id,
                                 scan.header.stamp, scanToCmd );
   }
   catch (tf::TransformException ex){
@@ -230,12 +233,27 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
     localGoal.setX( goalF2.x );
     localGoal.setY( goalF2.y );
     
+    cout << "\tlocal goal ("
+      << localGoal.x() << ", " << localGoal.y()
+      <<  ") in " << scan.header.frame_id << endl;
+
     localGoal= scanToCmd * localGoal;
 
-    cout << "\tmove to (" << _goal.x() << ", " << _goal.y() <<  ") -> (" << localGoal.x() << ", " << localGoal.y() <<  ")" << endl;
+    cout << "\tlocal goal ("
+      << localGoal.x() << ", " << localGoal.y()
+      <<  ") in " << _cmd_frame_id << endl;
+
+    // generate appropriate commande message :
+    
+    cout << "\tmove to (" << _goal.x() << ", " << _goal.y()
+      <<  ") in " << _goal_frame_id << " -> ("
+      << localGoal.x() << ", " << localGoal.y()
+      <<  ") in " << _cmd_frame_id << endl;
   }
-  else
+  else{
     cout << "\tstop ! (" << _goal.x() << ", " << _goal.y() <<  ") -> (" << localGoal.x() << ", " << localGoal.y() <<  ")" << endl;
+  }
+  
 
   // generate appropriate commande message :
   mia::Float2 norm_goal(localGoal.x(), localGoal.y());
@@ -251,6 +269,9 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
   cmd.angular.y = 0.0;
   cmd.angular.z = 0.0;
 
+  cout << "-> generate the command: distance "
+    << d  << " vs " << _vmap->a_min_scan_distance*0.2 << endl;
+  
   if( d > _vmap->a_min_scan_distance*0.2 )// !stop condition :
   {
     if( localGoal.x() > _vmap->a_min_scan_distance*0.2 )
@@ -278,5 +299,7 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
 
   _cmd_publisher.publish( cmd );
   _vmap->publish_vmap( _vmap_publisher, scan.header );
+  
+  cout << "-> end generate the command: " << endl;
 }
 
