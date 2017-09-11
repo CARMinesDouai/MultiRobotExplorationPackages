@@ -21,6 +21,7 @@ ros::Publisher _cmd_publisher;
 tf::TransformListener * _listener;
 
 double _dmax_l_speed, _max_a_speed;
+float _robot_radius;
 
 // Callback :
 void goal_subscriber(const geometry_msgs::PoseStamped & g);
@@ -38,11 +39,11 @@ int main(int argc, char **argv)
     
     // Configuration Scan: 
     std::string scan_topic, vmap_topic;
-    float robot_radius, perception_distance;
+    float perception_distance;
     
     if( !node_private.getParam("scan_topic", scan_topic) ) scan_topic= "/scan";
     if( !node_private.getParam("vmap_topic", vmap_topic) ) vmap_topic= "/scan_vmap";
-    if( !node_private.getParam("robot_radius", robot_radius) ) robot_radius= 0.3f;
+    if( !node_private.getParam("robot_radius", _robot_radius) ) _robot_radius= 0.3f;
     if( !node_private.getParam("perception_distance", perception_distance) ) perception_distance= 2.0f;
     
     // Configuration Movement: 
@@ -64,8 +65,8 @@ int main(int argc, char **argv)
     
     // Moinag: 
     _vmap= new RosVmap();
-    _vmap->setEpsilon( robot_radius );
-    _vmap->a_min_scan_distance= 0.5*robot_radius;
+    _vmap->setEpsilon( _robot_radius );
+    _vmap->a_min_scan_distance= 0.5*_robot_radius;
     _vmap->a_max_scan_distance= perception_distance;
 
     _goal.setX( goal_x );
@@ -127,7 +128,9 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
 
   cout << "scan_subscriber" << endl;
   
+  // Generate the vector-based map :
   _vmap->scan_subscriber(scan, true);
+  _vmap->extraFrontierNodes( _robot_radius*2.f );
 
   // Wait for appropriate Transform :
   

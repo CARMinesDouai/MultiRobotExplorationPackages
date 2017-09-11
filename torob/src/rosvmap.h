@@ -77,6 +77,7 @@ public:
     
     // Map manipulation:
     void merge( const RosVmap & toMerge, const mia::Float2 & translation );
+    void extraFrontierNodes(float dist);
  
     // Margent interface:
     void toTorobData( const mia::Data & d, torob_msgs::Data * td );

@@ -454,6 +454,34 @@ void RosVmap :: merge( const RosVmap & toMerge, const mia::Float2 & translation 
   visimap.add( toMerge.visimap, t );
   visimap.clean_frontier();
 }
+void RosVmap :: extraFrontierNodes( float dist ){
+  std::cout << "-> subdivide edge" << std::endl;
+  std::list<Graph2::edge_descriptor> frontiers
+    = visimap.getEdges( Node2::type_frontier, Node2::type_obstacle );
+  for( std::list<Graph2::edge_descriptor>::iterator it( frontiers.begin() ), itEnd( frontiers.end() ) ;
+        it != itEnd ; ++it ){
+
+    unsigned int s(boost::source( *it, visimap.a_map ));
+    unsigned int t(boost::target( *it, visimap.a_map ));
+  
+    std::cout << "\ttest edge " << s << ", " << t << std::endl;
+    std::cout << "\tType: " << visimap.a_map[s].type
+      << ", " << visimap.a_map[t].type << std::endl;
+    
+    Float2 between( visimap.a_map[t], visimap.a_map[s] );
+    
+    if( between.length() > dist ){
+      between.normalize(dist);
+      unsigned int vf= boost::add_vertex(visimap.a_map);
+      visimap.a_map[vf]= Node2(
+        visimap.a_map[t] + between,
+        Node2::type_frontier );
+    }
+  }
+  
+  std::cout << "-> end" << std::endl;
+}
+
 
 /*
  * Margent interface:
