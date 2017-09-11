@@ -1,0 +1,5 @@
+ <library path="lib/libadaptive_local_planner_lib">
+  <class name="local_planner/AdaptiveLocalPlanner" type="local_planner::AdaptiveLocalPlanner" base_class_type="nav_core::BaseLocalPlanner">
+    <description>This is an adaptive local planner plugin for move base, developed by Xuan Sang LE (xsang.le@gmail.com). Under MIT licence.</description>
+  </class>
+ </library>
