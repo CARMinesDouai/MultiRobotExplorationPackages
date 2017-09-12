@@ -1,5 +1,6 @@
 /**
-Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+Copyright (c) 2017 Guillaume Lozenguez 
+Adapted as Movebase plugin by Xuan Sang LE <xsang.le@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,70 +34,11 @@ namespace local_planner
     {
     }*/
 
-map<int, geometry_msgs::Point> AdaptiveLocalPlanner::cc_min_dist_to_robot()
-{
-    SimpleCCL cclo;
-    cclo.setMap(this->local_map);
-    map<int, geometry_msgs::Point> obs;
-    if (cclo.labels.size() == 0)
-        return obs;
-    set<int>::iterator it;
-
-    geometry_msgs::Point dist;
-    dist.z = 0;
-    dist.x = -1.0;
-    dist.y = -1.0;
-    // init
-    for (it = cclo.labels.begin(); it != cclo.labels.end(); it++)
-    {
-        if (cclo.labels_tree[*it].cnt < min_obstacle_size_px) continue;
-        obs[*it] = dist;
-    }
-    geometry_msgs::Point offset;
-    offset.x = fabs(this->local_map.info.origin.position.x);
-    offset.y = fabs(this->local_map.info.origin.position.y);
-    double resolution = this->local_map.info.resolution;
-    int i, j, idx, cell;
-    for (i = 0; i < cclo.dw; i++)
-        for (j = 0; j < cclo.dh; j++)
-        {
-            idx = j * cclo.dw + i;
-            cell = cclo.data[idx];
-            if (cell != -1)
-            {
-                if (cclo.labels_tree[cell].cnt < min_obstacle_size_px) continue;
-                dist.x = i * resolution - offset.x;
-                dist.y = j * resolution - offset.y;
-                dist.z = this->dist(dist);
-                if (obs[cell].z == 0 || obs[cell].z > dist.z)
-                {
-                    obs[cell] = dist;
-                }
-            }
-        }
-
-    map<int, geometry_msgs::Point>::iterator mit;
-    geometry_msgs::PoseArray poses;
-    poses.header.stamp = ros::Time::now();
-    poses.header.frame_id = this->local_map.header.frame_id;
-    for (mit = obs.begin(); mit != obs.end(); mit++)
-    {
-        geometry_msgs::Pose p;
-        p.position.x = mit->second.x;
-        p.position.y = mit->second.y;
-        p.orientation.w = 1.0;
-        poses.poses.push_back(p);
-    }
-    obstacles_pub.publish(poses);
-
-    return obs;
-}
 bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
 {
-    geometry_msgs::PoseStamped pose;
-    if (!this->my_pose(&pose))
+    if (!initialized_)
     {
-        ROS_ERROR("Cannot get pose on the goal frame: %s", this->goal_frame_id.c_str());
+        ROS_ERROR("AdaptiveLocalPlanner hasn't initialized correctly! Quit.");
         return false;
     }
 
@@ -106,92 +48,131 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
         ROS_ERROR("No local goal is selected");
         return false;
     }
+    tf::Vector3 _goal;
+    _goal.setX(goal.pose.position.x);
+    _goal.setY(goal.pose.position.y);
+    _vmap->scan_subscriber(scan, true);
+    _vmap->extraFrontierNodes( robot_radius*2.f );
 
-    tf::StampedTransform localToCmd;
+    // Get Transforms (goal -> scan frames and scan -> commande frames):
+
+    tf::StampedTransform goalToScan;
     try
     {
-        this->tf->lookupTransform(this->cmd_frame_id, this->local_map.header.frame_id, this->local_map.header.stamp, localToCmd);
+        tf->lookupTransform(scan.header.frame_id, goal_frame_id,ros::Time(0), goalToScan);
     }
     catch (tf::TransformException ex)
     {
-        ROS_ERROR("%s", ex.what());
+        ROS_ERROR("TF: %s - %s: %s", scan.header.frame_id.c_str(), goal_frame_id.c_str() ,ex.what());
         return false;
     }
 
-    /*SimpleCCL cclo;
-    cclo.setMap(this->local_map);
-    cclo.print();
-    return false;*/
-
-    // now calculate the potential field toward the local goal
-    double resolution = this->local_map.info.resolution;
-
-    geometry_msgs::Point fatt;
-    geometry_msgs::Point frep;
-    fatt.x = 0.0;
-    fatt.y = 0.0;
-    frep.x = 0.0;
-    frep.y = 0.0;
-
-    // attractive potential
-    double robot_to_goal = this->dist(goal.pose.position);
-    if (robot_to_goal < 0.1)
-        this->reached = true;
-    if (robot_to_goal < safe_goal_dist)
+    tf::StampedTransform scanToCmd;
+    try
     {
-        fatt.x = attractive_gain * goal.pose.position.x;
-        fatt.y = attractive_gain * goal.pose.position.y;
+        tf->lookupTransform(cmd_frame_id, scan.header.frame_id,ros::Time(0), scanToCmd);
     }
-    else
+    catch (tf::TransformException ex)
     {
-        fatt.x = goal.pose.position.x * safe_goal_dist / robot_to_goal;
-        fatt.y = goal.pose.position.y * safe_goal_dist / robot_to_goal;
+        ROS_ERROR("TF: %s - %s: %s", cmd_frame_id.c_str(), scan.header.frame_id.c_str(), ex.what());
+        return false;
     }
 
-    // repulsive potential to the nearest obstacles
+    tf::Vector3 localGoal(0.f, 0.f, 0.f);
 
-    int i, j, npix = 0;
+    // If transforms exist move goal in scan frame:
 
-    map<int, geometry_msgs::Point> obstacles = this->cc_min_dist_to_robot();
-    map<int, geometry_msgs::Point>::iterator mit;
-    for (mit = obstacles.begin(); mit != obstacles.end(); mit++)
+    localGoal = goalToScan * _goal;
+
+    mia::Float2 goalF2(localGoal.x(), localGoal.y());
+    _vmap->add_vertex(goalF2, mia::Node2::type_free);
+
+    mia::Float2 obs;
+
+    // If goal not in direct area get closest frontier node:
+    if (!_vmap->free_segment(mia::Float2(0.f, 0.f), goalF2) || _vmap->is_vertex_on_segment(mia::Float2(0.f, 0.f), goalF2, mia::Node2::type_obstacle, obs))
     {
-        //double theta = atan2(mit->second.y, mit->second.x);
-        if (mit->second.z <= this->safe_obs_dist)
+        goalF2 = _vmap->get_closest_vertex(goalF2, mia::Node2::type_frontier);
+        cout << "\tget frontier vertex: " << goalF2
+                << "(" << _vmap->add_vertex(goalF2, mia::Node2::type_free)
+                << ")" << endl;
+    }
+
+    if (_vmap->is_vertex_on_segment(mia::Float2(0.f, 0.f), goalF2,
+                                    mia::Node2::type_obstacle, obs))
+    {
+        float d(obs.normalize());
+        goalF2 = obs * (d - _vmap->visimap.getEpsilon());
+
+        cout << "\tget safe obstacle position :" << goalF2
+                << "(" << _vmap->add_vertex(goalF2, mia::Node2::type_free)
+                << ")" << endl;
+    }
+
+    localGoal.setX(goalF2.x);
+    localGoal.setY(goalF2.y);
+
+    cout << "\tlocal goal ("
+            << localGoal.x() << ", " << localGoal.y()
+            << ") in " << scan.header.frame_id << endl;
+
+    localGoal = scanToCmd * localGoal;
+
+    cout << "\tlocal goal ("
+            << localGoal.x() << ", " << localGoal.y()
+            << ") in " << cmd_frame_id << endl;
+
+    // generate appropriate commande message :
+
+    cout << "\tmove to (" << _goal.x() << ", " << _goal.y()
+            << ") in " << goal_frame_id << " -> ("
+            << localGoal.x() << ", " << localGoal.y()
+            << ") in " << cmd_frame_id << endl;
+
+    // generate appropriate commande message :
+    mia::Float2 norm_goal(localGoal.x(), localGoal.y());
+    float d = norm_goal.normalize();
+
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.linear.z = 0.0;
+
+    cmd_vel.angular.x = 0.0;
+    cmd_vel.angular.y = 0.0;
+    cmd_vel.angular.z = 0.0;
+
+    cout << "-> generate the command: distance "
+         << d << " vs " << _vmap->a_min_scan_distance * 0.2 << endl;
+
+    if (d > _vmap->a_min_scan_distance * 0.2) // !stop condition :
+    {
+        if (localGoal.x() > _vmap->a_min_scan_distance * 0.2)
         {
-            double tmp = repulsive_gain * (1.0 / safe_obs_dist - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
-            frep.x += tmp * mit->second.x;
-            frep.y += tmp * mit->second.y;
+            cmd_vel.linear.x = dmax_l_speed + min(0.5 * localGoal.x() * dmax_l_speed, dmax_l_speed);
+
+            if (0.005f < norm_goal.y)
+                cmd_vel.angular.z = min(norm_goal.y * 2.0 * max_a_speed, max_a_speed);
+
+            if (-0.005f > norm_goal.y)
+                cmd_vel.angular.z = -(min(norm_goal.y * -2.0 * max_a_speed, max_a_speed));
         }
         else
         {
-            frep.x += 0;
-            frep.y += 0;
+            cmd_vel.angular.z = max_a_speed;
         }
-        //double oyaw = tf::getYaw(pose.pose.orientation);
-        // cmd_vel.angular.z += atan2(frep.y, frep.z) -  tf::getYaw(pose.pose.orientation);
+    }
+    else 
+    {
+        reached = true;
+    }
+    if (!_vmap->safe_move(mia::Float2(0.f, 0.f)))
+    {
+        cout << "\tlinear movement desabled" << endl;
+        cmd_vel.linear.x = 0.f;
     }
 
-    if(verbose)
-        ROS_INFO("attractive: %f, %f Respulsive: %f %f", fatt.x, fatt.y, frep.x, frep.y);
-    // now calculate the velocity
-    tf::Vector3 cmd;
-    cmd.setX(fatt.x + frep.x);
-    cmd.setY(fatt.y + frep.y);
-
-    cmd = localToCmd * cmd;
-    double yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
-
-    cmd_vel.linear.x = cmd.x();
-    cmd_vel.linear.y = cmd.y();
-    cmd_vel.linear.z = 0.0;
-    cmd_vel.angular.x = 0.0;
-    cmd_vel.angular.y = 0.0; // ?
-    cmd_vel.angular.z = yaw;
-
-    if(verbose)
-        ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
-
+    cout << "\tcommande linear: " << cmd_vel.linear.x << ", angular: " << cmd_vel.angular.z << endl;
+    _vmap->publish_vmap(vmap_publisher, scan.header);
     return true;
 }
 /*
@@ -202,16 +183,16 @@ bool AdaptiveLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
     tf::StampedTransform transform;
     try
     {
-        this->tf->lookupTransform(this->cmd_frame_id, this->cmd_frame_id, ros::Time(0), transform);
+        this->tf->lookupTransform(this->goal_frame_id, this->cmd_frame_id, ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
-        ROS_ERROR("Cannot get transform %s-%s: %s", this->cmd_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
+        ROS_ERROR("Cannot get transform %s-%s: %s", this->goal_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
         return false;
     }
 
     pose->header.stamp = ros::Time::now();
-    pose->header.frame_id = this->cmd_frame_id;
+    pose->header.frame_id = this->goal_frame_id;
 
     pose->pose.position.x = transform.getOrigin().getX();
     pose->pose.position.y = transform.getOrigin().getY();
@@ -225,53 +206,38 @@ bool AdaptiveLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
 }
 bool AdaptiveLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
 {
+    geometry_msgs::PoseStamped pose;
+    if (!this->my_pose(&pose))
+    {
+        ROS_ERROR("Cannot get pose on the goal frame: %s", this->goal_frame_id.c_str());
+        return false;
+    }
     // just get last pose in global goal for now
     if (this->global_plan.size() == 0)
         return false;
     geometry_msgs::PoseStamped tmpgoal; //mypose
-    //if(! this->my_pose(&mypose))
-    //    return false;
 
-    tf::StampedTransform goalToLocal;
-    try
-    {
-        this->tf->lookupTransform(this->local_map.header.frame_id, this->goal_frame_id, this->local_map.header.stamp, goalToLocal);
-    }
-    catch (tf::TransformException ex)
-    {
-        ROS_ERROR("Goal To Local: %s", ex.what());
-        return false;
-    }
     std::vector<geometry_msgs::PoseStamped>::iterator it;
     double d, dx, dy;
-    bool has_goal = false;
+
     tf::Vector3 candidate;
     for (it = this->global_plan.begin(); it != this->global_plan.end(); it++)
     {
         candidate.setX(it->pose.position.x);
         candidate.setY(it->pose.position.y);
-        candidate = goalToLocal * candidate;
-        d = sqrt(pow(candidate.x(), 2) + pow(candidate.y(), 2));
+        d = sqrt(pow(candidate.x() - pose.pose.position.x, 2) + pow(candidate.y() -  pose.pose.position.y, 2));
         if (d > max_local_goal_dist)
             break;
     }
 
     _goal->pose.position.x = candidate.x();
     _goal->pose.position.y = candidate.y();
+    _goal->header.frame_id = this->goal_frame_id;
 
-    tmpgoal = *_goal;
-    tmpgoal.header.frame_id = this->local_map.header.frame_id;
-    tmpgoal.pose.position.x = _goal->pose.position.x;
-    tmpgoal.pose.position.y = _goal->pose.position.y;
-    local_goal_pub.publish(tmpgoal);
+    local_goal_pub.publish(*_goal);
     return true;
 }
 
-double AdaptiveLocalPlanner::dist(geometry_msgs::Point to)
-{
-    // Euclidiant dist between a point and the robot
-    return sqrt(pow(to.x, 2) + pow(to.y, 2));
-}
 bool AdaptiveLocalPlanner::isGoalReached()
 {
     return this->reached;
@@ -297,42 +263,30 @@ void AdaptiveLocalPlanner::initialize(std::string name, tf::TransformListener *t
         double dw, dh;
         ROS_INFO("Initialize adaptive local planner %s", name.c_str());
         private_nh = ros::NodeHandle(std::string("~") + "/" + name);
-        private_nh.param<double>("robot_radius", this->robot_radius, 0.3f);
+        private_nh.param<double>("robot_radius", this->robot_radius, 0.3f); 
+        private_nh.param<double>("max_local_goal_dist", this->max_local_goal_dist, 0.5f);
+        private_nh.param<double>("dmax_l_speed", this->dmax_l_speed, 0.2f);
+        private_nh.param<double>("max_a_speed", this->max_a_speed, 1.2f);
         private_nh.param<std::string>("goal_frame_id", this->goal_frame_id, "map");
         private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link");
         private_nh.param<std::string>("scan_topic", this->scan_topic, "/scan");
-        private_nh.param<double>("local_map_resolution", this->map_resolution, 0.05);
-        private_nh.param<double>("attractive_gain", this->attractive_gain, 1.0);
-        private_nh.param<double>("repulsive_gain", this->repulsive_gain, 1.0);
-        private_nh.param<double>("safe_goal_dist", this->safe_goal_dist, 1.0);
-        private_nh.param<double>("safe_obs_dist", this->safe_obs_dist, 1.0);
-        private_nh.param<double>("max_local_goal_dist", this->max_local_goal_dist, 0.5);
-        private_nh.param<int>("min_obstacle_size_px", this->min_obstacle_size_px, 20);
+        private_nh.param<std::string>("vmap_topic", this->vmap_topic, "/scan_vmap");
         private_nh.param<bool>("verbose", this->verbose, true);
-        private_nh.param<double>("field_w", dw, 2.0);
-        private_nh.param<double>("field_h", dh, 2.0);
+        private_nh.param<double>("perception_distance", this->perception_distance, 2.0f);
 
-        this->fw = round(dw / this->map_resolution);
-        this->fh = round(dh / this->map_resolution);
-
-        ROS_INFO("Robot radius %f", this->robot_radius);
-        ROS_INFO("Robot goal_frame_id %s", this->goal_frame_id.c_str());
-        ROS_INFO("Robot command_frame_id %s", this->cmd_frame_id.c_str());
-        ROS_INFO("Scan: %s", this->scan_topic.c_str());
-        ROS_INFO("Local map res: %f", this->map_resolution);
-        ROS_INFO("Field width %d", this->fw);
-        ROS_INFO("Field height %d", this->fh);
-        map_builder = new local_map::MapBuilder(this->fw, this->fh, this->map_resolution);
-        local_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/local_map", 1, true);
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
-        obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
+        vmap_publisher= private_nh.advertise<torob_msgs::VectorMap>( vmap_topic, 1, true);
         this->tf = tf;
+
+        _vmap = new RosVmap();
+        _vmap->setEpsilon(robot_radius);
+        _vmap->a_min_scan_distance = 0.5 * robot_radius;
+        _vmap->a_max_scan_distance = perception_distance;
+
         // subscribe to scan topic
         laser_sub = private_nh.subscribe<sensor_msgs::LaserScan>(this->scan_topic, 1,
                                                                  [this](const sensor_msgs::LaserScan::ConstPtr &msg) {
-                                                                     this->map_builder->grow(*msg);
-                                                                     this->local_map = map_builder->getMap();
-                                                                     this->local_pub.publish(this->local_map);
+                                                                     this->scan = *msg;
                                                                  });
         initialized_ = true;
     }

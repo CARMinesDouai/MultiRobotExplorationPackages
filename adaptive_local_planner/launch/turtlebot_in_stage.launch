@@ -13,8 +13,8 @@
   <arg name="3d_sensor"  default="$(optenv TURTLEBOT_3D_SENSOR kinect)"/>  <!-- kinect, asus_xtion_pro -->
 
   <!-- Name of the map to use (without path nor extension) and initial position -->
-  <arg name="map_file"       default=" $(env TURTLEBOT_STAGE_MAP_FILE)"/> <!-- robopark_plan -->
-  <arg name="world_file"     default=" $(env TURTLEBOT_STAGE_WORLD_FILE)"/>
+  <arg name="map_file"       default="$(find adaptive_local_planner)/sim/maze.yaml"/> <!-- robopark_plan -->
+  <arg name="world_file"     default="$(find adaptive_local_planner)/sim/maze.world"/>
   <arg name="initial_pose_x" default="2.0"/>
   <arg name="initial_pose_y" default="4.0"/>
   <arg name="initial_pose_a" default="0.0"/>
@@ -70,17 +70,17 @@
       <param name="robot_radius" value="0.25"/>
       <param name="perception_distance" value="1.0"/>
       <param name="goal_frame_id" value="map"/>
-      <param name="init_goal_x" value="2.0" />
-      <param name="init_goal_y" value="4.0" />
+      <param name="init_goal_x" value="0.0" />
+      <param name="init_goal_y" value="0.0" />
       <param name="linear_speed" value="0.2" />
       <param name="angular_speed" value="1.2" />
-  </node>
+  </node-->
 
   <node pkg="torob" type="viewer" name="scan_vmap_view" output="screen">
       <param name="vmap_topic" value="/scan_vmap"/>
       <param name="scan_topic" value="/scan"/>
       <param name="scale" value="100.0" />
-  </node-->
+  </node>
 
 
   <!--  ****** Maps *****  -->

@@ -10,6 +10,7 @@ Panels:
         - /Local Planning1
         - /Global Planning1
         - /Global Planning1/Planner1
+        - /Path (global)1
         - /Map2
         - /Pose1
         - /PoseArray1
@@ -548,7 +549,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 25; 255; 0
+      Color: 170; 0; 0
       Enabled: true
       Head Diameter: 0.300000012
       Head Length: 0.200000003
@@ -671,16 +672,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 20.1460133
+      Distance: 23.8466759
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -2.39610195
-        Y: 1.55061293
-        Z: -0.104388185
+        X: 0.287100494
+        Y: 4.2712841
+        Z: -0.209212705
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Name: Current View
