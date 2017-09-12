@@ -79,12 +79,10 @@ bool RosVmap :: safe_move( const mia::Float2 & pos )
   return true;
 }
 
-bool RosVmap :: is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & B, mia::Node2::EType t, mia::Float2 & fianloutput )
+bool RosVmap :: is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & B, mia::Node2::EType t, int & iNode )
 {
   list<mia::Graph2::vertex_descriptor> l= visimap.getVertices( t );
   list<mia::Graph2::vertex_descriptor>::iterator it, itEnd( l.end() );
-  
-//   cout << "is_vertex_on_segment ... " << l.size() << endl;
   
   float minDist2;
   mia::Graph2::vertex_descriptor selection= -1;
@@ -98,14 +96,53 @@ bool RosVmap :: is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & 
       {
         minDist2= dist2;
         selection= *it;
-        fianloutput= visimap.a_map[*it];
+        iNode= *it;
       }
     }
   }
   
-//   cout << "\tselection: " << selection << endl;
-  
   return (selection != -1);
+}
+
+mia::Float2 RosVmap :: avoid_obstacle(int & iNode, const mia::Float2 & from )const
+{
+  // Get all obstacle
+  int nb_neibor= 0;
+  mia::Float2 avoid(0.f, 0.f);
+  
+  mia::Graph2::out_edge_iterator ie, ieEnd;
+  boost::tie(ie, ieEnd)= boost::out_edges( iNode, visimap.a_map );
+  while( ie != ieEnd )
+  {
+    int neibor= boost::source( *ie, visimap.a_map );
+    if( neibor == iNode )
+      neibor= boost::target( *ie, visimap.a_map );
+
+    if( visimap.a_map[neibor].type == Node2::type_obstacle ){
+      cout << "\t\t(" << neibor << ", " << iNode << ")" << endl;
+      
+      avoid+= mia::Float2(visimap.a_map[neibor], visimap.a_map[iNode]).normal();
+      ++nb_neibor;
+    }
+    ++ie;
+  }
+
+  mia::Float2 bet(from, visimap.a_map[iNode]);
+  float d( bet.normalize() );
+  bet= bet.orthogonal();
+  
+  mia::Float2 solution1= visimap.a_map[iNode] + (bet*visimap.getEpsilon());
+  mia::Float2 solution2= visimap.a_map[iNode] + (bet*-visimap.getEpsilon());
+  
+  if( nb_neibor == 0 )
+    return solution1;
+
+  avoid= visimap.a_map[iNode] + avoid*(visimap.getEpsilon()/nb_neibor);
+  
+  if( solution1.distance(avoid) < solution2.distance(avoid) )
+    return solution1;
+  
+  return solution2;
 }
 
 mia::Float2 RosVmap :: get_closest_vertex(const mia::Float2 & A, mia::Node2::EType t)

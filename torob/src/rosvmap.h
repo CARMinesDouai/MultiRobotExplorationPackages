@@ -59,8 +59,9 @@ public:
     
     bool free_segment(const mia::Float2 & A, const mia::Float2 & B );
     bool safe_move( const mia::Float2 & pos );
-    bool is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & B, mia::Node2::EType t, mia::Float2 & output );
+    bool is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & B, mia::Node2::EType t, int & iNode );
     mia::Float2 get_closest_vertex(const mia::Float2 & A, mia::Node2::EType t);
+    mia::Float2 avoid_obstacle(int & iNode, const mia::Float2 & From )const;
 
     // subscriber:
     void map_subscriber( const nav_msgs::OccupancyGrid& map );

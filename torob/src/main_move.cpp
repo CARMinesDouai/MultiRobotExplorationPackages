@@ -188,12 +188,12 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
 
     cout << "\tinitial goal in scan frame :" << goalF2 << endl;
     
-    mia::Float2 obs;
+    int iV;
 
     // If goal not in direct area get closest frontier node:
     if( !_vmap->free_segment( mia::Float2(0.f, 0.f), goalF2 )
       || _vmap->is_vertex_on_segment( mia::Float2(0.f, 0.f), goalF2,
-                                      mia::Node2::type_obstacle, obs) )
+                                      mia::Node2::type_obstacle, iV) )
     {
       goalF2= _vmap->get_closest_vertex( goalF2, mia::Node2::type_frontier );
       cout << "\tget frontier vertex: " << goalF2
@@ -216,14 +216,13 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
 
     // trafine goal: ";
     if( _vmap->is_vertex_on_segment( mia::Float2(0.f, 0.f), goalF2,
-                                     mia::Node2::type_obstacle, obs) )
+                                     mia::Node2::type_obstacle, iV) )
     {
-//      cout << "(" << _vmap->is_vertex_on_segment( mia::Float2(0.f, 0.f), goalF2,
-//                                               mia::Node2::type_obstacle, obs)
-//           <<  " " << obs << ") ";
-
-      float d( obs.normalize() );
-      goalF2= obs * (d - _vmap->visimap.getEpsilon());
+      
+      goalF2= _vmap->avoid_obstacle(iV, mia::Float2(0.f, 0.f));
+      
+//       float d( obs.normalize() );
+//       goalF2= obs * (d - _vmap->visimap.getEpsilon());
 
       cout << "\tget safe obstacle position :" << goalF2
            << "(" << _vmap->add_vertex( goalF2, mia::Node2::type_free )
