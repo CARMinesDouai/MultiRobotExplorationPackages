@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   nav_msgs
+  torob_msgs
   geometry_msgs
   sensor_msgs
   visualization_msgs
@@ -139,9 +140,17 @@ add_library(adaptive_local_planner_lib
   src/3rd/mapbuilder.cpp
   src/3rd/map_ray_caster.cpp
   src/simple_ccl.cpp
-  src/adaptive_local_planner.cpp 
+  src/pf_local_planner.cpp 
+
+  src/vmap/data.cpp 
+  src/vmap/float2.cpp
+  src/vmap/impact.cpp
+  src/vmap/ogmap.cpp
+  src/vmap/rosvmap.cpp
+  src/vmap/visimap.cpp
+  src/adaptive_local_planner.cpp
 )
-#target_link_libraries(adaptive_local_planner_lib yaml-cpp)
+target_link_libraries(adaptive_local_planner_lib yaml-cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

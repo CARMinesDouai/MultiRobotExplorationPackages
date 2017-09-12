@@ -1,5 +1,26 @@
-#ifndef ADAPTIVE_LOCAL_PLANNER_H
-#define ADAPTIVE_LOCAL_PLANNER_H
+/**
+Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
+#ifndef PF_LOCAL_PLANNER
+#define PF_LOCAL_PLANNER
 
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -9,14 +30,13 @@
 #include <angles/angles.h>
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
-
-#include "vmap/rosvmap.h"
-
-using namespace std;
+#include <geometry_msgs/PoseArray.h>
+#include "3rd/mapbuilder.h"
+#include "simple_ccl.h"
 namespace local_planner
 {
 
-class AdaptiveLocalPlanner : public nav_core::BaseLocalPlanner
+class PFLocalPlanner : public nav_core::BaseLocalPlanner
 {
   public:
     /**
@@ -50,8 +70,8 @@ class AdaptiveLocalPlanner : public nav_core::BaseLocalPlanner
     /**
         * @brief  Virtual destructor for the interface
         */
-    ~AdaptiveLocalPlanner() {}
-    AdaptiveLocalPlanner()
+    ~PFLocalPlanner() {}
+    PFLocalPlanner()
     {
         initialized_ = false;
         reached = false;
@@ -62,20 +82,24 @@ class AdaptiveLocalPlanner : public nav_core::BaseLocalPlanner
     bool my_pose(geometry_msgs::PoseStamped *);
     double dist(geometry_msgs::Point to);
 
-    std::vector<geometry_msgs::PoseStamped> global_plan;
-    double robot_radius,perception_distance, max_local_goal_dist,dmax_l_speed,max_a_speed;
+    map<int,geometry_msgs::Point> cc_min_dist_to_robot();
+
+    double robot_radius;
+    double map_resolution;
+    int fw, fh, min_obstacle_size_px;
     std::string goal_frame_id;
     std::string cmd_frame_id;
-    std::string scan_topic,vmap_topic;
-    bool initialized_, verbose;
+    std::string scan_topic;
+    double attractive_gain, repulsive_gain, safe_goal_dist, safe_obs_dist,max_local_goal_dist;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
+    bool initialized_,verbose;
     bool reached;
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;
-    ros::Publisher local_goal_pub,vmap_publisher;
+    ros::Publisher local_pub, local_goal_pub, obstacles_pub;
     ros::Subscriber laser_sub;
-    RosVmap * _vmap;
-    sensor_msgs::LaserScan scan;
+    nav_msgs::OccupancyGrid local_map;
+    local_map::MapBuilder *map_builder;
 };
 };
-
 #endif
