@@ -32,7 +32,7 @@ SOFTWARE.
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
 
-#include "vmap/rosvmap.h"
+#include "rosvmap.h"
 
 using namespace std;
 namespace local_planner

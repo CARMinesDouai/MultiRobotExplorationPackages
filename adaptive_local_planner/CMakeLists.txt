@@ -123,8 +123,9 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  # include
   ${catkin_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/../torob/src
 )
 
 ## Declare a C++ library
@@ -132,7 +133,7 @@ include_directories(
 #   src/${PROJECT_NAME}/adaptive_local_planner.cpp
 # )
 find_package( PCL REQUIRED )
-include_directories(  ${catkin_INCLUDE_DIRS}  ${PCL_INCLUDE_DIRS} )
+include_directories( ${PCL_INCLUDE_DIRS} )
 link_directories(${PCL_LIBRARY_DIRS}  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -142,12 +143,12 @@ add_library(adaptive_local_planner_lib
   src/simple_ccl.cpp
   src/pf_local_planner.cpp 
 
-  src/vmap/data.cpp 
-  src/vmap/float2.cpp
-  src/vmap/impact.cpp
-  src/vmap/ogmap.cpp
-  src/vmap/rosvmap.cpp
-  src/vmap/visimap.cpp
+  ../torob/src/data.cpp 
+  ../torob/src/float2.cpp
+  ../torob/src/impact.cpp
+  ../torob/src/ogmap.cpp
+  ../torob/src/rosvmap.cpp
+  ../torob/src/visimap.cpp
   src/adaptive_local_planner.cpp
 )
 target_link_libraries(adaptive_local_planner_lib yaml-cpp)
