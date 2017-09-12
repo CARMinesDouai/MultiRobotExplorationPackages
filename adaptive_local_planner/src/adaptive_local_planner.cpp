@@ -167,7 +167,7 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
     }
     if (!_vmap->safe_move(mia::Float2(0.f, 0.f)))
     {
-        cout << "\tlinear movement desabled" << endl;
+        cout << "\tlinear movement disabled" << endl;
         cmd_vel.linear.x = 0.f;
     }
 

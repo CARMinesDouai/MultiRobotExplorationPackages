@@ -41,7 +41,7 @@ void SimpleCCL::setMap(nav_msgs::OccupancyGrid map)
 void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
 {
     int i,j,idx, label=0;
-    uint8_t cell;
+    int8_t cell;
     vector<cell_t> neighbors;
     // first pass
     for(i = 0; i < dh;i++)
@@ -49,7 +49,8 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
         {
             idx = i*dw + j;
             cell = map.data[idx];
-            if(cell == 100) // object
+            if(cell != -1 && cell != 0.0) printf("cell %d\n", cell); 
+            if(cell > 90) // object
             {
                 neighbors = this->neighbors_of((cell_t){j,i,0,cell} ,map, true);
 

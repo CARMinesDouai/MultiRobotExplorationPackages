@@ -137,8 +137,8 @@ link_directories(${PCL_LIBRARY_DIRS}  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 add_definitions(${PCL_DEFINITIONS})
 
 add_library(adaptive_local_planner_lib 
-  src/3rd/mapbuilder.cpp
-  src/3rd/map_ray_caster.cpp
+  #src/3rd/mapbuilder.cpp
+  #src/3rd/map_ray_caster.cpp
   src/simple_ccl.cpp
   src/pf_local_planner.cpp 
 

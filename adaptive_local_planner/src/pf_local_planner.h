@@ -31,7 +31,6 @@ SOFTWARE.
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
 #include <geometry_msgs/PoseArray.h>
-#include "3rd/mapbuilder.h"
 #include "simple_ccl.h"
 namespace local_planner
 {
@@ -80,7 +79,7 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
   private:
     bool select_goal(geometry_msgs::PoseStamped *);
     bool my_pose(geometry_msgs::PoseStamped *);
-    double dist(geometry_msgs::Point to);
+    double dist(geometry_msgs::Point from, geometry_msgs::Point to);
 
     map<int,geometry_msgs::Point> cc_min_dist_to_robot();
 
@@ -97,9 +96,8 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;
     ros::Publisher local_pub, local_goal_pub, obstacles_pub;
-    ros::Subscriber laser_sub;
+    ros::Subscriber cmap_sub;
     nav_msgs::OccupancyGrid local_map;
-    local_map::MapBuilder *map_builder;
 };
 };
 #endif

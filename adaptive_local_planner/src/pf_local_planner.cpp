@@ -35,9 +35,11 @@ namespace local_planner
 
 map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
 {
+    
+    map<int, geometry_msgs::Point> obs;
+    return obs;
     SimpleCCL cclo;
     cclo.setMap(this->local_map);
-    map<int, geometry_msgs::Point> obs;
     if (cclo.labels.size() == 0)
         return obs;
     set<int>::iterator it;
@@ -67,7 +69,7 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
                 if (cclo.labels_tree[cell].cnt < min_obstacle_size_px) continue;
                 dist.x = i * resolution - offset.x;
                 dist.y = j * resolution - offset.y;
-                dist.z = this->dist(dist);
+                //dist.z = this->dist(dist);
                 if (obs[cell].z == 0 || obs[cell].z > dist.z)
                 {
                     obs[cell] = dist;
@@ -110,18 +112,18 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     tf::StampedTransform localToCmd;
     try
     {
-        this->tf->lookupTransform(this->cmd_frame_id, this->local_map.header.frame_id, this->local_map.header.stamp, localToCmd);
+        this->tf->lookupTransform(this->cmd_frame_id, this->local_map.header.frame_id, ros::Time(0), localToCmd);
     }
     catch (tf::TransformException ex)
     {
-        ROS_ERROR("%s", ex.what());
+        ROS_ERROR("TF: %s - %s : %s", this->cmd_frame_id.c_str(), this->local_map.header.frame_id.c_str() , ex.what());
         return false;
     }
-
-    /*SimpleCCL cclo;
+    
+    SimpleCCL cclo;
     cclo.setMap(this->local_map);
     cclo.print();
-    return false;*/
+    return false;
 
     // now calculate the potential field toward the local goal
     double resolution = this->local_map.info.resolution;
@@ -134,18 +136,19 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     frep.y = 0.0;
 
     // attractive potential
-    double robot_to_goal = this->dist(goal.pose.position);
+    double robot_to_goal = this->dist(pose.pose.position, goal.pose.position);
+
     if (robot_to_goal < 0.1)
         this->reached = true;
     if (robot_to_goal < safe_goal_dist)
     {
-        fatt.x = attractive_gain * goal.pose.position.x;
-        fatt.y = attractive_gain * goal.pose.position.y;
+        fatt.x = attractive_gain * (goal.pose.position.x - pose.pose.position.x);
+        fatt.y = attractive_gain * (goal.pose.position.y - pose.pose.position.y);
     }
     else
     {
-        fatt.x = goal.pose.position.x * safe_goal_dist / robot_to_goal;
-        fatt.y = goal.pose.position.y * safe_goal_dist / robot_to_goal;
+        fatt.x = (goal.pose.position.x - pose.pose.position.x) * safe_goal_dist / robot_to_goal;
+        fatt.y = (goal.pose.position.y - pose.pose.position.y) * safe_goal_dist / robot_to_goal;
     }
 
     // repulsive potential to the nearest obstacles
@@ -176,10 +179,11 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         ROS_INFO("attractive: %f, %f Respulsive: %f %f", fatt.x, fatt.y, frep.x, frep.y);
     // now calculate the velocity
     tf::Vector3 cmd;
-    cmd.setX(fatt.x + frep.x);
-    cmd.setY(fatt.y + frep.y);
+    cmd.setX(fatt.x);
+    cmd.setY(fatt.y);
 
-    cmd = localToCmd * cmd;
+    //
+    //cmd = localToCmd * cmd;
     double yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
 
     cmd_vel.linear.x = cmd.x();
@@ -202,16 +206,16 @@ bool PFLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
     tf::StampedTransform transform;
     try
     {
-        this->tf->lookupTransform(this->cmd_frame_id, this->cmd_frame_id, ros::Time(0), transform);
+        this->tf->lookupTransform(cmd_frame_id, this->cmd_frame_id, ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
-        ROS_ERROR("Cannot get transform %s-%s: %s", this->cmd_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
+        ROS_ERROR("Cannot get transform %s-%s: %s",cmd_frame_id.c_str(), this->cmd_frame_id.c_str(), ex.what());
         return false;
     }
 
     pose->header.stamp = ros::Time::now();
-    pose->header.frame_id = this->cmd_frame_id;
+    pose->header.frame_id = cmd_frame_id;
 
     pose->pose.position.x = transform.getOrigin().getX();
     pose->pose.position.y = transform.getOrigin().getY();
@@ -228,14 +232,18 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
     // just get last pose in global goal for now
     if (this->global_plan.size() == 0)
         return false;
-    geometry_msgs::PoseStamped tmpgoal; //mypose
-    //if(! this->my_pose(&mypose))
-    //    return false;
+   
+    geometry_msgs::PoseStamped pose;
+    if (!this->my_pose(&pose))
+    {
+        ROS_ERROR("Cannot get pose on the goal frame: %s", this->goal_frame_id.c_str());
+        return false;
+    }
 
     tf::StampedTransform goalToLocal;
     try
     {
-        this->tf->lookupTransform(this->local_map.header.frame_id, this->goal_frame_id, this->local_map.header.stamp, goalToLocal);
+        this->tf->lookupTransform(this->cmd_frame_id, this->local_map.header.frame_id, ros::Time(0), goalToLocal);
     }
     catch (tf::TransformException ex)
     {
@@ -251,7 +259,10 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
         candidate.setX(it->pose.position.x);
         candidate.setY(it->pose.position.y);
         candidate = goalToLocal * candidate;
-        d = sqrt(pow(candidate.x(), 2) + pow(candidate.y(), 2));
+        geometry_msgs::Point tmp;
+        tmp.x = candidate.x();
+        tmp.y = candidate.y();
+        d = this->dist(pose.pose.position,tmp);
         if (d > max_local_goal_dist)
             break;
     }
@@ -259,18 +270,15 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
     _goal->pose.position.x = candidate.x();
     _goal->pose.position.y = candidate.y();
 
-    tmpgoal = *_goal;
-    tmpgoal.header.frame_id = this->local_map.header.frame_id;
-    tmpgoal.pose.position.x = _goal->pose.position.x;
-    tmpgoal.pose.position.y = _goal->pose.position.y;
-    local_goal_pub.publish(tmpgoal);
+    _goal->header.frame_id = this->cmd_frame_id;
+    local_goal_pub.publish(*_goal);
     return true;
 }
 
-double PFLocalPlanner::dist(geometry_msgs::Point to)
+double PFLocalPlanner::dist(geometry_msgs::Point from, geometry_msgs::Point to)
 {
     // Euclidiant dist between a point and the robot
-    return sqrt(pow(to.x, 2) + pow(to.y, 2));
+    return sqrt(pow(to.x - from.x, 2) + pow(to.y - from.y, 2));
 }
 bool PFLocalPlanner::isGoalReached()
 {
@@ -300,7 +308,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<double>("robot_radius", this->robot_radius, 0.3f);
         private_nh.param<std::string>("goal_frame_id", this->goal_frame_id, "map");
         private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link");
-        private_nh.param<std::string>("scan_topic", this->scan_topic, "/scan");
+        private_nh.param<std::string>("local_map_topic", this->scan_topic, "/move_base/local_costmap/costmap");
         private_nh.param<double>("local_map_resolution", this->map_resolution, 0.05);
         private_nh.param<double>("attractive_gain", this->attractive_gain, 1.0);
         private_nh.param<double>("repulsive_gain", this->repulsive_gain, 1.0);
@@ -322,17 +330,15 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         ROS_INFO("Local map res: %f", this->map_resolution);
         ROS_INFO("Field width %d", this->fw);
         ROS_INFO("Field height %d", this->fh);
-        map_builder = new local_map::MapBuilder(this->fw, this->fh, this->map_resolution);
-        local_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/local_map", 1, true);
+
+        local_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/pf_local_map", 1, true);
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
         obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
         this->tf = tf;
         // subscribe to scan topic
-        laser_sub = private_nh.subscribe<sensor_msgs::LaserScan>(this->scan_topic, 1,
-                                                                 [this](const sensor_msgs::LaserScan::ConstPtr &msg) {
-                                                                     this->map_builder->grow(*msg);
-                                                                     this->local_map = map_builder->getMap();
-                                                                     this->local_pub.publish(this->local_map);
+        cmap_sub = private_nh.subscribe<nav_msgs::OccupancyGrid>(this->scan_topic, 1,
+                                                                 [this](const nav_msgs::OccupancyGrid::ConstPtr &msg) {
+                                                                     this->local_map = *msg;
                                                                  });
         initialized_ = true;
     }

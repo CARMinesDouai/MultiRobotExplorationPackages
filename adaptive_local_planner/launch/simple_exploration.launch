@@ -1,5 +1,6 @@
 <launch>
   <include file="$(find multi_merge)/launch/cartographer_minimal.launch" />
+
   <include file="$(find adaptive_local_planner)/launch/includes/move_base.launch.xml" />
  
   <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
@@ -38,7 +39,7 @@
         map_topic: /map
         subscribe_to_updates: true 
       inflation:
-        inflation_radius: 0.3
+        inflation_radius: 0.4
 
     </rosparam>
   </node>
