@@ -87,10 +87,11 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
     mia::Float2 goalF2(localGoal.x(), localGoal.y());
     _vmap->add_vertex(goalF2, mia::Node2::type_free);
 
-    mia::Float2 obs;
+    int iV;
 
     // If goal not in direct area get closest frontier node:
-    if (!_vmap->free_segment(mia::Float2(0.f, 0.f), goalF2) || _vmap->is_vertex_on_segment(mia::Float2(0.f, 0.f), goalF2, mia::Node2::type_obstacle, obs))
+    if (!_vmap->free_segment(mia::Float2(0.f, 0.f), goalF2)
+     || _vmap->is_vertex_on_segment(mia::Float2(0.f, 0.f), goalF2, mia::Node2::type_obstacle, iV))
     {
         goalF2 = _vmap->get_closest_vertex(goalF2, mia::Node2::type_frontier);
         cout << "\tget frontier vertex: " << goalF2
@@ -99,10 +100,9 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
     }
 
     if (_vmap->is_vertex_on_segment(mia::Float2(0.f, 0.f), goalF2,
-                                    mia::Node2::type_obstacle, obs))
+                                    mia::Node2::type_obstacle, iV))
     {
-        float d(obs.normalize());
-        goalF2 = obs * (d - _vmap->visimap.getEpsilon());
+        goalF2= _vmap->avoid_obstacle(iV, mia::Float2(0.f, 0.f));
 
         cout << "\tget safe obstacle position :" << goalF2
                 << "(" << _vmap->add_vertex(goalF2, mia::Node2::type_free)
