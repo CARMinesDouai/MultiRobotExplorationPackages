@@ -1,5 +1,5 @@
 AdaptiveLocalPlanner:
-  robot_radius: 0.3
+  robot_radius: 0.25
   max_local_goal_dist: 0.5
   dmax_l_speed: 0.2
   max_a_speed: 1.2

@@ -1,5 +1,6 @@
 /**
-Copyright (c) 2017 Xuan Sang LE <xsang.le@gmail.com>
+Copyright (c) 2017 Guillaume Lozenguez 
+Adapted as Movebase plugin by Xuan Sang LE <xsang.le@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -160,7 +161,10 @@ bool AdaptiveLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel
             cmd_vel.angular.z = max_a_speed;
         }
     }
-
+    else 
+    {
+        reached = true;
+    }
     if (!_vmap->safe_move(mia::Float2(0.f, 0.f)))
     {
         cout << "\tlinear movement desabled" << endl;

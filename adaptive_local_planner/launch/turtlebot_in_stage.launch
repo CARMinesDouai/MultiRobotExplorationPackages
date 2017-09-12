@@ -74,13 +74,13 @@
       <param name="init_goal_y" value="0.0" />
       <param name="linear_speed" value="0.2" />
       <param name="angular_speed" value="1.2" />
-  </node>
+  </node-->
 
   <node pkg="torob" type="viewer" name="scan_vmap_view" output="screen">
       <param name="vmap_topic" value="/scan_vmap"/>
       <param name="scan_topic" value="/scan"/>
       <param name="scale" value="100.0" />
-  </node-->
+  </node>
 
 
   <!--  ****** Maps *****  -->
