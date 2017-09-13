@@ -129,15 +129,26 @@ mia::Float2 RosVmap :: avoid_obstacle(int & iNode, const mia::Float2 & from )con
 
   mia::Float2 bet(from, visimap.a_map[iNode]);
   float d( bet.normalize() );
-  bet= bet.orthogonal();
   
-  mia::Float2 solution1= visimap.a_map[iNode] + (bet*visimap.getEpsilon());
-  mia::Float2 solution2= visimap.a_map[iNode] + (bet*-visimap.getEpsilon());
+  float eps= visimap.getEpsilon();
+  float refDist= sqrt( d*d - eps*eps );
+  
+  mia::Float2 solution2= from + (bet*refDist);
+  bet= bet.orthogonal();
+  mia::Float2 solution1= solution2 + (bet*1.1f*eps);
+  solution2= solution2 + (bet*-1.1f*eps);
+
+//   float safeDist= 1.1f*visimap.getEpsilon();
+//   
+//   bet= bet.orthogonal();
+//   mia::Float2 solution1= visimap.a_map[iNode] + (bet*safeDist);
+//   mia::Float2 solution2= visimap.a_map[iNode] + (bet*-safeDist);
+
   
   if( nb_neibor == 0 )
     return solution1;
 
-  avoid= visimap.a_map[iNode] + avoid*(visimap.getEpsilon()/nb_neibor);
+  avoid= visimap.a_map[iNode] + avoid*(eps/nb_neibor);
   
   if( solution1.distance(avoid) < solution2.distance(avoid) )
     return solution1;
@@ -512,7 +523,8 @@ void RosVmap :: extraFrontierNodes( float dist ){
       unsigned int vf= boost::add_vertex(visimap.a_map);
       visimap.a_map[vf]= Node2(
         visimap.a_map[t] + between,
-        Node2::type_frontier );
+        Node2::type_frontier
+      );
     }
   }
   

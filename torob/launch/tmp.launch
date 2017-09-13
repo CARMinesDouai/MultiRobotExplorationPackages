@@ -23,7 +23,7 @@
       <param name="perception_distance" value="2.0"/>
       <param name="goal_frame_id" value="odom"/>
       <param name="init_goal_x" value="1.5" />
-      <param name="init_goal_y" value="-1.2" />
+      <param name="init_goal_y" value="-0.6" />
       <param name="linear_speed" value="0.2" />
       <param name="angular_speed" value="1.2" />
   </node>
