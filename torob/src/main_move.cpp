@@ -220,9 +220,6 @@ void scan_subscriber(const sensor_msgs::LaserScan & scan){
     {
       
       goalF2= _vmap->avoid_obstacle(iV, mia::Float2(0.f, 0.f));
-      
-//       float d( obs.normalize() );
-//       goalF2= obs * (d - _vmap->visimap.getEpsilon());
 
       cout << "\tget safe obstacle position :" << goalF2
            << "(" << _vmap->add_vertex( goalF2, mia::Node2::type_free )
