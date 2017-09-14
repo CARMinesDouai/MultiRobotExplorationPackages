@@ -45,12 +45,12 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
     vector<cell_t> neighbors;
     // first pass
     for(i = 0; i < dh;i++)
+    {
         for(j = 0; j< dw; j++)
         {
             idx = i*dw + j;
             cell = map.data[idx];
-            if(cell != -1 && cell != 0.0) printf("cell %d\n", cell); 
-            if(cell > 90) // object
+            if(cell  >= th) // object
             {
                 neighbors = this->neighbors_of((cell_t){j,i,0,cell} ,map, true);
 
@@ -75,6 +75,8 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
                 }
             }
         }
+
+    }
     // second pass
     for(i = 0; i <  dh;i++)
         for(j =0; j < dw; j++)
@@ -104,30 +106,30 @@ int SimpleCCL::min_label_of(vector<cell_t> neighbors)
 vector<cell_t> SimpleCCL::neighbors_of(cell_t curr, nav_msgs::OccupancyGrid map, bool first)
 {
     vector<cell_t> neighbors;
-    if(curr.x != 0 && map.data[curr.x - 1 + curr.y*dw] == curr.value) // x-1, y
+    if(curr.x != 0 && map.data[curr.x - 1 + curr.y*dw]>= th) // x-1, y
         neighbors.push_back((cell_t){curr.x - 1, curr.y, data[curr.x-1 + curr.y*dw],curr.value });
 
-    if(curr.y != 0 && map.data[curr.x  + (curr.y-1)*dw] == curr.value) // x, y - 1
+    if(curr.y != 0 && map.data[curr.x  + (curr.y-1)*dw]>= th) // x, y - 1
         neighbors.push_back((cell_t){curr.x , curr.y-1, data[curr.x + (curr.y-1)*dw], curr.value});
 
-    if(curr.x != 0 && curr.y != 0 && map.data[curr.x - 1 + (curr.y-1)*dw] == curr.value) // x - 1, y - 1
+    if(curr.x != 0 && curr.y != 0 && map.data[curr.x - 1 + (curr.y-1)*dw]>= th) // x - 1, y - 1
         neighbors.push_back((cell_t){curr.x - 1, curr.y-1, data[curr.x-1 + (curr.y-1)*dw], curr.value });
 
-    if(curr.x != dw - 1 && curr.y != 0 && map.data[curr.x + 1 + (curr.y-1)*dw] == curr.value) // x+1, y - 1
+    if(curr.x != dw - 1 && curr.y != 0 && map.data[curr.x + 1 + (curr.y-1)*dw]>= th) // x+1, y - 1
         neighbors.push_back((cell_t){curr.x + 1, curr.y-1, data[curr.x+1 + (curr.y-1)*dw],curr.value });
     
     if(first) return neighbors;
     // this is for second pass
-    if(curr.x != dw - 1 && map.data[curr.x + 1 + (curr.y)*dw] == curr.value) // x+1 , y
+    if(curr.x != dw - 1 && map.data[curr.x + 1 + (curr.y)*dw]>= th) // x+1 , y
         neighbors.push_back((cell_t){curr.x + 1, curr.y, data[curr.x+1 + curr.y*dw],curr.value });
 
-    if(curr.x !=0 && curr.y != dh - 1 && map.data[curr.x - 1 + (curr.y+1)*dw] == curr.value) // x - 1, y + 1
+    if(curr.x !=0 && curr.y != dh - 1 && map.data[curr.x - 1 + (curr.y+1)*dw]>= th) // x - 1, y + 1
         neighbors.push_back((cell_t){curr.x - 1, curr.y+1, data[curr.x-1 + (curr.y+1)*dw],curr.value });
 
-    if( curr.y != dh - 1 && map.data[curr.x  + (curr.y+1)*dw] == curr.value) // y + 1, x
+    if( curr.y != dh - 1 && map.data[curr.x  + (curr.y+1)*dw]>= th) // y + 1, x
         neighbors.push_back((cell_t){curr.x , curr.y+1, data[curr.x + (curr.y+1)*dw],curr.value });
 
-    if(curr.x != dw - 1 && curr.y != dh - 1 && map.data[curr.x + 1 + (curr.y+1)*dw] == curr.value) // x+1 , y +1
+    if(curr.x != dw - 1 && curr.y != dh - 1 && map.data[curr.x + 1 + (curr.y+1)*dw]>= th) // x+1 , y +1
         neighbors.push_back((cell_t){curr.x + 1, curr.y+1, data[curr.x+1 + (curr.y+1)*dw],curr.value });
     return neighbors;
 }

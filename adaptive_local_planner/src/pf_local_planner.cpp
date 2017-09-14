@@ -33,13 +33,14 @@ namespace local_planner
     {
     }*/
 
-map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
+map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedTransform localToCmd, geometry_msgs::PoseStamped pose)
 {
     
     map<int, geometry_msgs::Point> obs;
-    return obs;
     SimpleCCL cclo;
+    cclo.th = cosmap_th;
     cclo.setMap(this->local_map);
+    //cclo.print();
     if (cclo.labels.size() == 0)
         return obs;
     set<int>::iterator it;
@@ -55,9 +56,10 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
         obs[*it] = dist;
     }
     geometry_msgs::Point offset;
-    offset.x = fabs(this->local_map.info.origin.position.x);
-    offset.y = fabs(this->local_map.info.origin.position.y);
+    offset.x = this->local_map.info.origin.position.x;
+    offset.y = this->local_map.info.origin.position.y;
     double resolution = this->local_map.info.resolution;
+    tf::Vector3 tmp;
     int i, j, idx, cell;
     for (i = 0; i < cclo.dw; i++)
         for (j = 0; j < cclo.dh; j++)
@@ -67,9 +69,13 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
             if (cell != -1)
             {
                 if (cclo.labels_tree[cell].cnt < min_obstacle_size_px) continue;
-                dist.x = i * resolution - offset.x;
-                dist.y = j * resolution - offset.y;
-                //dist.z = this->dist(dist);
+
+                tmp.setX(i * resolution + offset.x);
+                tmp.setY(j * resolution + offset.y);
+                tmp = localToCmd*tmp;
+                dist.x = tmp.x();
+                dist.y = tmp.y();
+                dist.z = this->dist(pose.pose.position, dist);
                 if (obs[cell].z == 0 || obs[cell].z > dist.z)
                 {
                     obs[cell] = dist;
@@ -80,7 +86,7 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot()
     map<int, geometry_msgs::Point>::iterator mit;
     geometry_msgs::PoseArray poses;
     poses.header.stamp = ros::Time::now();
-    poses.header.frame_id = this->local_map.header.frame_id;
+    poses.header.frame_id = this->cmd_frame_id;
     for (mit = obs.begin(); mit != obs.end(); mit++)
     {
         geometry_msgs::Pose p;
@@ -120,10 +126,6 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         return false;
     }
     
-    SimpleCCL cclo;
-    cclo.setMap(this->local_map);
-    cclo.print();
-    return false;
 
     // now calculate the potential field toward the local goal
     double resolution = this->local_map.info.resolution;
@@ -138,8 +140,8 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     // attractive potential
     double robot_to_goal = this->dist(pose.pose.position, goal.pose.position);
 
-    if (robot_to_goal < 0.1)
-        this->reached = true;
+    if (robot_to_goal < 0.1) this->reached = true;
+
     if (robot_to_goal < safe_goal_dist)
     {
         fatt.x = attractive_gain * (goal.pose.position.x - pose.pose.position.x);
@@ -147,22 +149,25 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     }
     else
     {
-        fatt.x = (goal.pose.position.x - pose.pose.position.x) * safe_goal_dist / robot_to_goal;
-        fatt.y = (goal.pose.position.y - pose.pose.position.y) * safe_goal_dist / robot_to_goal;
+        fatt.x = attractive_gain*(goal.pose.position.x - pose.pose.position.x) * safe_goal_dist / robot_to_goal;
+        fatt.y = attractive_gain*(goal.pose.position.y - pose.pose.position.y) * safe_goal_dist / robot_to_goal;
     }
 
     // repulsive potential to the nearest obstacles
 
     int i, j, npix = 0;
 
-    map<int, geometry_msgs::Point> obstacles = this->cc_min_dist_to_robot();
+    map<int, geometry_msgs::Point> obstacles = this->cc_min_dist_to_robot(localToCmd, pose);
+    //return false;
     map<int, geometry_msgs::Point>::iterator mit;
     for (mit = obstacles.begin(); mit != obstacles.end(); mit++)
     {
         //double theta = atan2(mit->second.y, mit->second.x);
         if (mit->second.z <= this->safe_obs_dist)
         {
-            double tmp = repulsive_gain * (1.0 / safe_obs_dist - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
+            double tmp;
+            
+            tmp = repulsive_gain * (1.0 / safe_obs_dist - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
             frep.x += tmp * mit->second.x;
             frep.y += tmp * mit->second.y;
         }
@@ -171,28 +176,84 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
             frep.x += 0;
             frep.y += 0;
         }
-        //double oyaw = tf::getYaw(pose.pose.orientation);
-        // cmd_vel.angular.z += atan2(frep.y, frep.z) -  tf::getYaw(pose.pose.orientation);
     }
 
     if(verbose)
         ROS_INFO("attractive: %f, %f Respulsive: %f %f", fatt.x, fatt.y, frep.x, frep.y);
     // now calculate the velocity
     tf::Vector3 cmd;
-    cmd.setX(fatt.x);
-    cmd.setY(fatt.y);
+    cmd.setX(fatt.x + frep.x);
+    cmd.setY(fatt.y + frep.y);
 
-    //
-    //cmd = localToCmd * cmd;
-    double yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
+    // now make a prediction of the future destination
+    geometry_msgs::PoseStamped future_pose;
 
-    cmd_vel.linear.x = cmd.x();
-    cmd_vel.linear.y = cmd.y();
+    int attemp = 10;
+    bool is_collision = true;
+    double yaw, future_d, theta;
+    while(attemp != 0 && is_collision)
+    {
+        is_collision = false;
+
+        future_pose.header.stamp = ros::Time::now();
+        future_pose.header.frame_id = cmd_frame_id;
+        yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
+        future_pose.pose.position.x = cmd.x() + (pose.pose.position.x*cos(yaw) - pose.pose.position.y*sin(yaw));
+        future_pose.pose.position.y = cmd.y() + (pose.pose.position.x*sin(yaw) + pose.pose.position.y*cos(yaw));
+    
+        futur_pose_pub.publish(future_pose);
+
+        geometry_msgs::Point normof_f, normof_obs;
+        future_d = this->dist(future_pose.pose.position, pose.pose.position);
+        normof_f.x = (future_pose.pose.position.x - pose.pose.position.x)/future_d;
+        normof_f.y = (future_pose.pose.position.y - pose.pose.position.y)/future_d;
+
+        for (mit = obstacles.begin(); mit != obstacles.end(); mit++)
+        {
+            normof_obs.x = (mit->second.x - pose.pose.position.x)/mit->second.z;
+            normof_obs.y =  (mit->second.y - pose.pose.position.y)/mit->second.z;
+            theta = acos(normof_f.x*normof_obs.x + normof_f.y*normof_obs.y);
+            if(theta > M_PI/2.0) continue;
+            double x = fabs(mit->second.z*sin(theta));
+            if(x < robot_radius && mit->second.z < future_d)
+            {
+                double vf = (1.0 / robot_radius - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
+                cmd.setX( cmd.x() + 0.5f*vf* mit->second.x);
+                cmd.setY( cmd.y()+ 0.5f*vf* mit->second.y);
+                is_collision = true;
+                //break;
+            }
+        }
+        attemp--;
+    }
+
+
     cmd_vel.linear.z = 0.0;
     cmd_vel.angular.x = 0.0;
     cmd_vel.angular.y = 0.0; // ?
     cmd_vel.angular.z = yaw;
-
+    if(is_collision)
+    {
+        ROS_ERROR("There will be a collision if i take this direction. I stop");
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+    }
+    else 
+    {
+        
+        cmd_vel.linear.x = cmd.x();
+        cmd_vel.linear.y = cmd.y();
+        // check if v is so big
+        double v = sqrt(pow(cmd_vel.linear.x, 2)+ pow(cmd_vel.linear.y, 2));
+        if(v > max_linear_v)
+        {
+            if(verbose) ROS_INFO("V is too big, scale it down");
+            theta = atan2(cmd_vel.linear.y, cmd_vel.linear.x);
+            cmd_vel.linear.x = max_linear_v*cos(theta);
+            cmd_vel.linear.y = max_linear_v*sin(theta);
+        }
+    }
+    
     if(verbose)
         ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
@@ -308,8 +369,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<double>("robot_radius", this->robot_radius, 0.3f);
         private_nh.param<std::string>("goal_frame_id", this->goal_frame_id, "map");
         private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link");
-        private_nh.param<std::string>("local_map_topic", this->scan_topic, "/move_base/local_costmap/costmap");
-        private_nh.param<double>("local_map_resolution", this->map_resolution, 0.05);
+        private_nh.param<std::string>("local_map_topic", this->local_map_topic, "/move_base/local_costmap/costmap");
         private_nh.param<double>("attractive_gain", this->attractive_gain, 1.0);
         private_nh.param<double>("repulsive_gain", this->repulsive_gain, 1.0);
         private_nh.param<double>("safe_goal_dist", this->safe_goal_dist, 1.0);
@@ -317,27 +377,22 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<double>("max_local_goal_dist", this->max_local_goal_dist, 0.5);
         private_nh.param<int>("min_obstacle_size_px", this->min_obstacle_size_px, 20);
         private_nh.param<bool>("verbose", this->verbose, true);
-        private_nh.param<double>("field_w", dw, 2.0);
-        private_nh.param<double>("field_h", dh, 2.0);
-
-        this->fw = round(dw / this->map_resolution);
-        this->fh = round(dh / this->map_resolution);
-
+        private_nh.param<int>("cosmap_th", cosmap_th, 90);
+        private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
         ROS_INFO("Robot radius %f", this->robot_radius);
         ROS_INFO("Robot goal_frame_id %s", this->goal_frame_id.c_str());
         ROS_INFO("Robot command_frame_id %s", this->cmd_frame_id.c_str());
-        ROS_INFO("Scan: %s", this->scan_topic.c_str());
+        ROS_INFO("localmap: %s", this->local_map_topic.c_str());
         ROS_INFO("Local map res: %f", this->map_resolution);
-        ROS_INFO("Field width %d", this->fw);
-        ROS_INFO("Field height %d", this->fh);
 
-        local_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/pf_local_map", 1, true);
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
+        futur_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1, true);
         obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
         this->tf = tf;
         // subscribe to scan topic
-        cmap_sub = private_nh.subscribe<nav_msgs::OccupancyGrid>(this->scan_topic, 1,
+        cmap_sub = private_nh.subscribe<nav_msgs::OccupancyGrid>(this->local_map_topic, 10,
                                                                  [this](const nav_msgs::OccupancyGrid::ConstPtr &msg) {
+                                                                     //ROS_INFO("Local map data found");
                                                                      this->local_map = *msg;
                                                                  });
         initialized_ = true;

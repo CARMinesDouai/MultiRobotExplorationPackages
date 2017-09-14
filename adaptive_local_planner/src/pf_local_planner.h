@@ -81,21 +81,21 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     bool my_pose(geometry_msgs::PoseStamped *);
     double dist(geometry_msgs::Point from, geometry_msgs::Point to);
 
-    map<int,geometry_msgs::Point> cc_min_dist_to_robot();
+    map<int,geometry_msgs::Point> cc_min_dist_to_robot(tf::StampedTransform localToCmd, geometry_msgs::PoseStamped pose);
 
     double robot_radius;
     double map_resolution;
-    int fw, fh, min_obstacle_size_px;
+    int min_obstacle_size_px, cosmap_th;
     std::string goal_frame_id;
     std::string cmd_frame_id;
-    std::string scan_topic;
-    double attractive_gain, repulsive_gain, safe_goal_dist, safe_obs_dist,max_local_goal_dist;
+    std::string local_map_topic;
+    double attractive_gain, repulsive_gain, safe_goal_dist, safe_obs_dist,max_local_goal_dist,max_linear_v;
     std::vector<geometry_msgs::PoseStamped> global_plan;
     bool initialized_,verbose;
     bool reached;
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;
-    ros::Publisher local_pub, local_goal_pub, obstacles_pub;
+    ros::Publisher  local_goal_pub, obstacles_pub, futur_pose_pub;
     ros::Subscriber cmap_sub;
     nav_msgs::OccupancyGrid local_map;
 };

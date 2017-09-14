@@ -12,9 +12,9 @@ Panels:
         - /Global Planning1
         - /Global Planning1/Planner1
         - /Path (global)1
-        - /Map2
         - /Pose1
         - /PoseArray1
+        - /Pose2
       Splitter Ratio: 0.5
     Tree Height: 807
   - Class: rviz/Selection
@@ -388,12 +388,12 @@ Visualization Manager:
           Class: rviz/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: Costmap
           Topic: /move_base/local_costmap/costmap
           Unreliable: false
           Use Timestamp: false
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
@@ -612,16 +612,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
-    - Alpha: 0.699999988
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /pf_local_map
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.100000001
@@ -651,6 +641,21 @@ Visualization Manager:
       Shaft Radius: 0.00999999978
       Shape: Arrow (Flat)
       Topic: /obstacles
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /future_pose
       Unreliable: false
       Value: true
   Enabled: true
@@ -708,5 +713,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1867
-  X: 53
+  X: 66
   Y: 30

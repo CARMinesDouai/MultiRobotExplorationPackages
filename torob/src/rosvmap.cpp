@@ -131,13 +131,13 @@ mia::Float2 RosVmap :: avoid_obstacle(int & iNode, const mia::Float2 & from )con
   float d( bet.normalize() );
   bet= bet.orthogonal();
   
-  mia::Float2 solution1= visimap.a_map[iNode] + (bet*visimap.getEpsilon());
-  mia::Float2 solution2= visimap.a_map[iNode] + (bet*-visimap.getEpsilon());
+  mia::Float2 solution1= visimap.a_map[iNode] + (bet*1.1f*visimap.getEpsilon());
+  mia::Float2 solution2= visimap.a_map[iNode] + (bet*-1.1f*visimap.getEpsilon());
   
   if( nb_neibor == 0 )
     return solution1;
 
-  avoid= visimap.a_map[iNode] + avoid*(visimap.getEpsilon()/nb_neibor);
+  avoid= visimap.a_map[iNode] + avoid*(1.1f*visimap.getEpsilon()/nb_neibor);
   
   if( solution1.distance(avoid) < solution2.distance(avoid) )
     return solution1;

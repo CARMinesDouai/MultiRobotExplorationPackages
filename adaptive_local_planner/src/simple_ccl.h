@@ -52,6 +52,7 @@ public:
     vector<int8_t>data;
     set<int> labels;
     vector<subset_t> labels_tree;
+    int8_t th;
 private:
     void ccl(nav_msgs::OccupancyGrid map);
     vector<cell_t> neighbors_of(cell_t curr, nav_msgs::OccupancyGrid map, bool);
