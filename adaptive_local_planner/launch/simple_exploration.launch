@@ -30,7 +30,7 @@
       # Map management parameters
       unknown_cost_value: 255
       
-      robot_radius: 0.25
+      robot_radius: 0.3
       plugins: 
         - {name: static, type: "costmap_2d::StaticLayer"}
         - {name: inflation,        type: "costmap_2d::InflationLayer"}  
@@ -39,7 +39,7 @@
         map_topic: /map
         subscribe_to_updates: true 
       inflation:
-        inflation_radius: 0.4
+        inflation_radius: 0.3
 
     </rosparam>
   </node>

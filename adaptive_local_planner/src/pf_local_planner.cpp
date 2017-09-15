@@ -166,7 +166,9 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         if (mit->second.z <= this->safe_obs_dist)
         {
             double tmp;
-            
+            tmp = this->get_angle(goal.pose.position, mit->second, pose.pose.position);
+            if(fabs(tmp) > 3.0*M_PI/5.0) continue;
+
             tmp = repulsive_gain * (1.0 / safe_obs_dist - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
             frep.x += tmp * mit->second.x;
             frep.y += tmp * mit->second.y;
@@ -188,53 +190,47 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     // now make a prediction of the future destination
     geometry_msgs::PoseStamped future_pose;
 
-    int attemp = 10;
+    int attemp = recovery_attemps;
     bool is_collision = true;
     double yaw, future_d, theta;
+    //this->adjust_velocity(&cmd);
     while(attemp != 0 && is_collision)
     {
         is_collision = false;
-
         future_pose.header.stamp = ros::Time::now();
         future_pose.header.frame_id = cmd_frame_id;
         yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
         future_pose.pose.position.x = cmd.x() + (pose.pose.position.x*cos(yaw) - pose.pose.position.y*sin(yaw));
         future_pose.pose.position.y = cmd.y() + (pose.pose.position.x*sin(yaw) + pose.pose.position.y*cos(yaw));
-    
         futur_pose_pub.publish(future_pose);
-
-        geometry_msgs::Point normof_f, normof_obs;
+        this->adjust_velocity(&cmd);
         future_d = this->dist(future_pose.pose.position, pose.pose.position);
-        normof_f.x = (future_pose.pose.position.x - pose.pose.position.x)/future_d;
-        normof_f.y = (future_pose.pose.position.y - pose.pose.position.y)/future_d;
 
         for (mit = obstacles.begin(); mit != obstacles.end(); mit++)
         {
-            normof_obs.x = (mit->second.x - pose.pose.position.x)/mit->second.z;
-            normof_obs.y =  (mit->second.y - pose.pose.position.y)/mit->second.z;
-            theta = acos(normof_f.x*normof_obs.x + normof_f.y*normof_obs.y);
-            if(theta > M_PI/2.0) continue;
+            theta = this->get_angle(future_pose.pose.position, mit->second, pose.pose.position) ; 
+            if(fabs(theta) > M_PI/2.0) continue;
             double x = fabs(mit->second.z*sin(theta));
             if(x < robot_radius && mit->second.z < future_d)
             {
-                double vf = (1.0 / robot_radius - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
-                cmd.setX( cmd.x() + 0.5f*vf* mit->second.x);
-                cmd.setY( cmd.y()+ 0.5f*vf* mit->second.y);
+                double vf = attractive_gain*(1.0 / robot_radius - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
+                cmd.setX( cmd.x() + vf* mit->second.x);
+                cmd.setY( cmd.y()+ vf* mit->second.y);
                 is_collision = true;
                 //break;
             }
         }
         attemp--;
     }
-
+    this->adjust_velocity(&cmd);
 
     cmd_vel.linear.z = 0.0;
     cmd_vel.angular.x = 0.0;
     cmd_vel.angular.y = 0.0; // ?
     cmd_vel.angular.z = yaw;
-    if(is_collision)
+    if(is_collision )
     {
-        ROS_ERROR("There will be a collision if i take this direction. I stop");
+        ROS_WARN("There will be a collision if i take this direction. I stop");
         cmd_vel.linear.x = 0.0;
         cmd_vel.linear.y = 0.0;
     }
@@ -244,20 +240,36 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         cmd_vel.linear.x = cmd.x();
         cmd_vel.linear.y = cmd.y();
         // check if v is so big
-        double v = sqrt(pow(cmd_vel.linear.x, 2)+ pow(cmd_vel.linear.y, 2));
-        if(v > max_linear_v)
-        {
-            if(verbose) ROS_INFO("V is too big, scale it down");
-            theta = atan2(cmd_vel.linear.y, cmd_vel.linear.x);
-            cmd_vel.linear.x = max_linear_v*cos(theta);
-            cmd_vel.linear.y = max_linear_v*sin(theta);
-        }
     }
     
     if(verbose)
         ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
     return true;
+}
+double PFLocalPlanner::get_angle(geometry_msgs::Point v1, geometry_msgs::Point v2, geometry_msgs::Point pose)
+{
+    geometry_msgs::Point n1, n2;
+    double d1 = this->dist(pose,v1);
+    double d2 = this->dist(pose,v2);
+
+    n1.x = (v1.x - pose.x)/d1;
+    n1.y = (v1.y - pose.y)/d1;
+
+    n2.x = (v2.x - pose.x)/d2;
+    n2.y = (v2.y - pose.y)/d2;
+
+    return acos(n1.x*n2.x + n1.y*n2.y);
+}
+void PFLocalPlanner::adjust_velocity(tf::Vector3 *cmd)
+{
+    double v = sqrt(pow(cmd->x(), 2)+ pow(cmd->y(), 2));
+    if(v > max_linear_v)
+    {
+        double theta = atan2(cmd->y(), cmd->x());
+        cmd->setX(max_linear_v*cos(theta));
+        cmd->setY(max_linear_v*sin(theta));
+    }
 }
 /*
     get my pose on the base_link frame
@@ -378,12 +390,8 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<int>("min_obstacle_size_px", this->min_obstacle_size_px, 20);
         private_nh.param<bool>("verbose", this->verbose, true);
         private_nh.param<int>("cosmap_th", cosmap_th, 90);
+        private_nh.param<int>("recovery_attemps", recovery_attemps, 10);
         private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
-        ROS_INFO("Robot radius %f", this->robot_radius);
-        ROS_INFO("Robot goal_frame_id %s", this->goal_frame_id.c_str());
-        ROS_INFO("Robot command_frame_id %s", this->cmd_frame_id.c_str());
-        ROS_INFO("localmap: %s", this->local_map_topic.c_str());
-        ROS_INFO("Local map res: %f", this->map_resolution);
 
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
         futur_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1, true);

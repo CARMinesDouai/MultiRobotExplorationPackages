@@ -80,12 +80,13 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     bool select_goal(geometry_msgs::PoseStamped *);
     bool my_pose(geometry_msgs::PoseStamped *);
     double dist(geometry_msgs::Point from, geometry_msgs::Point to);
-
+    void adjust_velocity(tf::Vector3 *cmd);
+    double get_angle(geometry_msgs::Point, geometry_msgs::Point, geometry_msgs::Point);
     map<int,geometry_msgs::Point> cc_min_dist_to_robot(tf::StampedTransform localToCmd, geometry_msgs::PoseStamped pose);
 
     double robot_radius;
     double map_resolution;
-    int min_obstacle_size_px, cosmap_th;
+    int min_obstacle_size_px, cosmap_th, recovery_attemps;
     std::string goal_frame_id;
     std::string cmd_frame_id;
     std::string local_map_topic;

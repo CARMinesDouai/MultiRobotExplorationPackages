@@ -13,10 +13,10 @@
   <arg name="3d_sensor"  default="$(optenv TURTLEBOT_3D_SENSOR kinect)"/>  <!-- kinect, asus_xtion_pro -->
 
   <!-- Name of the map to use (without path nor extension) and initial position -->
-  <arg name="map_file"       default="$(find adaptive_local_planner)/sim/maze.yaml"/> <!-- robopark_plan -->
-  <arg name="world_file"     default="$(find adaptive_local_planner)/sim/maze.world"/>
-  <arg name="initial_pose_x" default="2.0"/>
-  <arg name="initial_pose_y" default="4.0"/>
+  <arg name="map_file"       default="$(find adaptive_local_planner)/sim/map.yaml"/> <!-- robopark_plan -->
+  <arg name="world_file"     default="$(find adaptive_local_planner)/sim/map.world"/>
+  <arg name="initial_pose_x" default="0.0"/>
+  <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
 
   <param name="/use_sim_time" value="true"/>
