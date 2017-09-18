@@ -425,7 +425,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
         futur_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1, true);
         obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
-        local_map_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/local_map",1,true);
+        local_map_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/pf_local_map",1,true);
 
         this->tf = tf;
         
