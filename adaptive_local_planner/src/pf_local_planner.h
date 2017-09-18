@@ -31,6 +31,7 @@ SOFTWARE.
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
 #include <geometry_msgs/PoseArray.h>
+#include <actionlib_msgs/GoalStatusArray.h>
 #include "simple_ccl.h"
 namespace local_planner
 {
@@ -97,8 +98,9 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;
     ros::Publisher  local_goal_pub, obstacles_pub, futur_pose_pub;
-    ros::Subscriber cmap_sub;
+    ros::Subscriber cmap_sub, sub_status;
     nav_msgs::OccupancyGrid local_map;
+    actionlib_msgs::GoalStatusArray global_status;
 };
 };
 #endif

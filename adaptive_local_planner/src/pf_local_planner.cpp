@@ -126,6 +126,14 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         return false;
     }
     
+    for(int i = 0 ; i< global_status.status_list.size(); i++)
+    {
+        if(global_status.status_list[i].status == 4 || global_status.status_list[i].status == 5)
+        {
+            ROS_WARN("This is not a valid global path, i will not attemp to compute velocity command for it");
+            return false;
+        }
+    }
 
     // now calculate the potential field toward the local goal
     double resolution = this->local_map.info.resolution;
@@ -403,6 +411,10 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
                                                                      //ROS_INFO("Local map data found");
                                                                      this->local_map = *msg;
                                                                  });
+        sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
+        [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
+            this->global_status = *msg;
+        });
         initialized_ = true;
     }
     else
