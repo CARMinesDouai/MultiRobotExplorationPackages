@@ -15,8 +15,8 @@
     <rosparam file="$(find adaptive_local_planner)/launch/includes/costmap_common_params.yaml" command="load" ns="global_costmap"/> 
     <rosparam file="$(find adaptive_local_planner)/launch/includes/global_costmap_params.yaml" command="load" />
 
-    <rosparam file="$(find adaptive_local_planner)/launch/includes/costmap_common_params.yaml" command="load" ns="local_costmap"/>
-     <rosparam file="$(find adaptive_local_planner)/launch/includes/local_costmap_params.yaml" command="load" />
+    <!--rosparam file="$(find adaptive_local_planner)/launch/includes/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+     <rosparam file="$(find adaptive_local_planner)/launch/includes/local_costmap_params.yaml" command="load" /-->
 
     <rosparam file="$(find adaptive_local_planner)/launch/includes/global_planner_params.yaml" command="load" />
 

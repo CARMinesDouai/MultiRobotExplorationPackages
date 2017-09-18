@@ -38,7 +38,7 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedT
     
     map<int, geometry_msgs::Point> obs;
     SimpleCCL cclo;
-    cclo.th = cosmap_th;
+    cclo.th = local_map_th;
     cclo.setMap(this->local_map);
     //cclo.print();
     if (cclo.labels.size() == 0)
@@ -56,8 +56,8 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedT
         obs[*it] = dist;
     }
     geometry_msgs::Point offset;
-    offset.x = this->local_map.info.origin.position.x;
-    offset.y = this->local_map.info.origin.position.y;
+    offset.x = fabs(this->local_map.info.origin.position.x);
+    offset.y = fabs(this->local_map.info.origin.position.y);
     double resolution = this->local_map.info.resolution;
     tf::Vector3 tmp;
     int i, j, idx, cell;
@@ -70,8 +70,8 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedT
             {
                 if (cclo.labels_tree[cell].cnt < min_obstacle_size_px) continue;
 
-                tmp.setX(i * resolution + offset.x);
-                tmp.setY(j * resolution + offset.y);
+                tmp.setX(i * resolution - offset.x);
+                tmp.setY(j * resolution - offset.y);
                 tmp = localToCmd*tmp;
                 dist.x = tmp.x();
                 dist.y = tmp.y();
@@ -101,6 +101,19 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedT
 }
 bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
 {
+    ros::Subscriber  sub_status;
+    // subcribes to related topics
+    
+    sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
+        [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
+            this->global_status = *msg;
+        });
+    
+
+    ros::spinOnce();
+
+    //return false;
+    
     geometry_msgs::PoseStamped pose;
     if (!this->my_pose(&pose))
     {
@@ -125,6 +138,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         ROS_ERROR("TF: %s - %s : %s", this->cmd_frame_id.c_str(), this->local_map.header.frame_id.c_str() , ex.what());
         return false;
     }
+
     
     for(int i = 0 ; i< global_status.status_list.size(); i++)
     {
@@ -324,7 +338,7 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
     tf::StampedTransform goalToLocal;
     try
     {
-        this->tf->lookupTransform(this->cmd_frame_id, this->local_map.header.frame_id, ros::Time(0), goalToLocal);
+        this->tf->lookupTransform(this->cmd_frame_id, this->goal_frame_id, ros::Time(0), goalToLocal);
     }
     catch (tf::TransformException ex)
     {
@@ -389,7 +403,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<double>("robot_radius", this->robot_radius, 0.3f);
         private_nh.param<std::string>("goal_frame_id", this->goal_frame_id, "map");
         private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link");
-        private_nh.param<std::string>("local_map_topic", this->local_map_topic, "/move_base/local_costmap/costmap");
+        //private_nh.param<std::string>("local_map_topic", this->local_map_topic, "/move_base/local_costmap/costmap");
         private_nh.param<double>("attractive_gain", this->attractive_gain, 1.0);
         private_nh.param<double>("repulsive_gain", this->repulsive_gain, 1.0);
         private_nh.param<double>("safe_goal_dist", this->safe_goal_dist, 1.0);
@@ -397,24 +411,31 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<double>("max_local_goal_dist", this->max_local_goal_dist, 0.5);
         private_nh.param<int>("min_obstacle_size_px", this->min_obstacle_size_px, 20);
         private_nh.param<bool>("verbose", this->verbose, true);
-        private_nh.param<int>("cosmap_th", cosmap_th, 90);
+        private_nh.param<int>("local_map_th", local_map_th, 90);
         private_nh.param<int>("recovery_attemps", recovery_attemps, 10);
         private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
+        private_nh.param<double>("field_w", dw, 4.0);
+        private_nh.param<double>("field_h", dh, 4.0);
+        private_nh.param<double>("local_map_resolution", this->map_resolution, 0.05);
+        private_nh.param<std::string>("scan_topic", this->scan_topic, "/scan");
+        this->fw = round(dw / this->map_resolution);
+        this->fh = round(dh / this->map_resolution);
+        map_builder = new local_map::MapBuilder(this->fw, this->fh, this->map_resolution);
 
         local_goal_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/local_goal", 1, true);
         futur_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1, true);
         obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
+        local_map_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/local_map",1,true);
+
         this->tf = tf;
-        // subscribe to scan topic
-        cmap_sub = private_nh.subscribe<nav_msgs::OccupancyGrid>(this->local_map_topic, 10,
-                                                                 [this](const nav_msgs::OccupancyGrid::ConstPtr &msg) {
-                                                                     //ROS_INFO("Local map data found");
-                                                                     this->local_map = *msg;
-                                                                 });
-        sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
-        [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
-            this->global_status = *msg;
-        });
+        
+        cmap_sub = private_nh.subscribe<sensor_msgs::LaserScan>(this->scan_topic, 10,
+            [this](const sensor_msgs::LaserScan::ConstPtr &msg) {
+                this->map_builder->grow(*msg);
+                this->local_map = map_builder->getMap();
+                //ROS_WARN("local map found");
+                this->local_map_pub.publish(this->local_map);
+           });
         initialized_ = true;
     }
     else
