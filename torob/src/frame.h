@@ -23,6 +23,7 @@
 #include "int2.h"
 #include "float2.h"
 #include "visimap.h"
+#include "ring.h"
 #include "ogmap.h"
 #include "color.h"
 
@@ -34,7 +35,7 @@
 #include <SDL2/SDL.h>
 
 namespace mia{
-    
+
 class Frame
 {
 protected:
@@ -83,7 +84,7 @@ public:
     void penColor(const Color & c){ a_penColor= c; }
     Color bgColor()const{ return a_bgColor; }
     void bgColor(const Color & c){ a_bgColor= c; }
- 
+
     inline float scale()const { return a_scale; };
     inline void scale(float newScale) { a_scale= newScale; };
 
@@ -98,10 +99,10 @@ public:
     void drawPoints( const std::list<Float2> & lp, const Color &color);
     void drawLine( Float2 p1, Float2 p2, const Color &color);
     void drawLine( Float2 p1, Float2 p2, float thickness, const Color &color);
-    
+
     // 2-Dimention Drawing :
     void drawRect( Float2 p1, Float2 p2, const Color &color);
-    
+
     void drawPolygon(const std::list<Float2> & p, const Color &color);
     void fillPolygon(const std::list<Float2> & p, const Color &color);
 
@@ -110,27 +111,28 @@ public:
 
     // Font :
     void write(const char * str, Float2 p, const Color &color);
-    
+
     // Images :
     void printImage(const char * fileName);
 
     // References :
     void drawBasis(float unit= 1.);
-    
+
     //MoInAg :
 //     void drawParticle( const Particle & bod, const Color &color);
 //     void drawParticle( const Particle & bod, const Color &color, const Float2 &delta );
-// 
+//
 //     void drawAgent( const Moinag * pAgent, const Color & color= 0x808080FF, const Float2 & delta= 0.f );
-// 
+//
 //     void drawVisibilityGraph(const Visibility & v, const Float2 & delta= 0.f, float localTheta= 0.f, const Float2 & localPosition= 0.f  );
-// 
+//
 //     void drawGridMap( int ** const grid, int width, int height, Float2 origine, float resolution );
-    
+
+    void drawRing(const Ring & ring);
     void drawGridMap( const OGMap & map, const mia::Float2 & delta=Float2(0.f, 0.f), bool info= false );
     void drawVisiMap( const VisiMap & map, const mia::Float2 & delta=Float2(0.f, 0.f), bool info= false );
     void drawVisiMapObstacle( const VisiMap & vm, const Float2 & delta=Float2(0.f, 0.f) );
-    
+
     /// Getter / setter :
     ///------------------
     //Float2 getCorner()const{ return a_center - (((Float2)Draw::getScreenSize()) / (a_unitSize + a_unitSize) ); }
