@@ -145,23 +145,23 @@ void Frame::drawLine( Float2 p1, Float2 p2, float thickness, const Color &color)
     Float2 thick( p1, p2 );
     thick.orthonormalize( thickness*0.5 );
     Sint16 vx[4], vy[4];
-    
+
     Float2 p(p1-thick);
     vx[0]= X( p.x );
     vy[0]= Y( p.y );
-    
+
     p= p1+thick;
     vx[1]= X( p.x );
     vy[1]= Y( p.y );
-    
+
     p= p2+thick;
     vx[2]= X( p.x );
     vy[2]= Y( p.y );
-    
+
     p= p2-thick;
     vx[3]= X( p.x );
     vy[3]= Y( p.y );
-    
+
     filledPolygonRGBA(a_renderer, vx, vy, 4, color.red, color.green, color.blue, color.alfa);
 }
 
@@ -185,7 +185,7 @@ void Frame::drawBasis(float unit) {
 void Frame::drawPolygon(const std::list<Float2> & p, const Color &color){
     int nbpoint= p.size(), i(0);
     Sint16 vx[nbpoint], vy[nbpoint];
-    
+
     std::list<Float2>::const_iterator itEnd( p.end() );
     for( std::list<Float2>::const_iterator it( p.begin() ) ; it != itEnd; ++ it )
     {
@@ -200,7 +200,7 @@ void Frame::drawPolygon(const std::list<Float2> & p, const Color &color){
 void Frame::fillPolygon(const std::list<Float2> & p, const Color &color){
     int nbpoint= p.size(), i(0);
     Sint16 vx[nbpoint], vy[nbpoint];
-    
+
     std::list<Float2>::const_iterator itEnd( p.end() );
     for( std::list<Float2>::const_iterator it( p.begin() ) ; it != itEnd; ++ it )
     {
@@ -247,27 +247,27 @@ void Frame::printImage(const char * fileName) {
 // {
 //     // Get Body :
 //     Particle body( pAgent->body() );
-// 
+//
 //     {   // Draw trace :
 //         std::list<Float2>::const_iterator it( pAgent->trace().begin() ), itEnd( pAgent->trace().end() );
 //         Float2 last= *it;
 //         fillCircle( last, body.radius*0.5f, color);
-// 
+//
 //         for( ++it; it != itEnd; ++it ) {
 //             drawLine( last, *it, color );
 //             last= *it;
 //             fillCircle( last, body.radius*0.5f, color);
 //         }
-// 
+//
 //         drawLine( last, body.position, color );
 //         drawParticle( body, color );
 //     }
 //     drawVisibilityGraph( *(pAgent->visibility()) );
-// 
+//
 //     // Set body in local basis :
 //     body.position= 0.f;
 //     body.theta= 0.f;
-// 
+//
 //     // Show filterd obstacles :
 // //     {
 // //         std::list<mia::Float2>::const_iterator last= pAgent->ptrFilteredObstacleList()->begin();
@@ -280,43 +280,43 @@ void Frame::printImage(const char * fileName) {
 // //             last= it;
 // //         }
 // //     }
-// 
-// 
+//
+//
 //     Color flagColor[9]= {
 //         Color(0x202020FF), // _undef,
 //         Color(0xFF8080FF), // _obstacle,
 //         Color(0x904040FF), // _hide_obstacle,
-// 
+//
 //         Color(0xFFA020FF), // _safe,
 //         Color(0x40FF40FF), // _exit,
 //         Color(0x404040FF), // _waypoint & _path,
-// 
+//
 //         Color(0x404040FF),
 //         Color(0x404040FF),
 //         Color(0x404040FF)
 //     };
-// 
+//
 //     Float2 localPos(pAgent->body().position);
 //     float localAngle(pAgent->body().theta);
-// 
+//
 //     drawVisibilityGraph( *(pAgent->visibility()), delta, localAngle, localPos);
-//     
+//
 //     // Show obstacles :
 //     Color red( 0xFF8080FF );
 //     for( std::vector<mia::Particle>::const_iterator it= pAgent->obstacleList()->begin(); it != pAgent->obstacleList()->end(); ++it )
 //         drawCircle( delta+it->position, it->radius, red );
-// 
+//
 //     // drawCircle( pAgent->getTargetVertexPosition(), body.radius, 0x40A0A0FF );
-// 
+//
 //     // Show local topology :
 //     {
 //         const BoostTopo * top= pAgent->local();
-// 
+//
 //         BoostTopo::vertex_iterator vert, verEnd;
 //         for( boost::tie(vert, verEnd)= boost::vertices( (*top) ) ; vert != verEnd ; ++vert ) {
 //             drawCircle( delta + (*top)[*vert].position, (*top)[*vert].radius, flagColor[(*top)[*vert].flag]);
 //         }
-// 
+//
 //         BoostTopo::edge_iterator ited, end;
 //         for( boost::tie(ited, end)= boost::edges( (*top) ) ; ited != end ; ++ited )
 //         {
@@ -324,33 +324,33 @@ void Frame::printImage(const char * fileName) {
 //             drawLine(delta+src, delta+trg, flagColor[ (*top)[*ited].flag ]);
 //         }
 //     }
-// 
+//
 //     // Show local to visibility :
 //     {
 // //         cout << "\n\t";
-// 
+//
 //         std::list< pairOFvertices >::const_iterator it( pAgent->local2visibility().begin() );
 //         std::list< pairOFvertices >::const_iterator end( pAgent->local2visibility().end() );
 //         for( ; it != end; ++it )
 //         {
 // //             cout << it->first << ", " << it->second << " | ";
-// 
+//
 //             Particle src( pAgent->local( it->first ) );
 //             Particle trg( pAgent->visibility( it->second ) );
-// 
+//
 //             drawLine( delta+src.position, delta+trg.position.toBasis(localAngle, localPos), Color(0x808080FF) );
 //         }
 //     }
-// 
-// 
+//
+//
 // //     cout << endl;
-// 
+//
 //     fillCircle( delta + pAgent->getControl(), body.radius*0.5f, Color(0x40FF40A0));
-// 
+//
 //     drawParticle( body, color, delta );
 //     drawCircle( delta,  pAgent->getPerceptionRadius(), color );
 // }
-// 
+//
 // void Frame :: drawVisibilityGraph(const Visibility & w, const Float2 & delta, float localTheta, const Float2 & localPosition)
 // {
 //     float eps( w.getEpsilon() ), halfeps(eps*0.75f);
@@ -359,7 +359,7 @@ void Frame::printImage(const char * fileName) {
 //         Float2 p( delta + (*vert).position.toBasis(localTheta, localPosition) );
 //         drawCircle( p, eps, 0x801010FF );
 //     }
-// 
+//
 //     for( int i= w.a_visibility.edge_first_index() ; i < w.a_visibility.edge_limit(); i = w.a_visibility.edge_next_index(i) )
 //     {
 //         Float2 src( w.a_visibility.source_vertex(i).position );
@@ -369,36 +369,49 @@ void Frame::printImage(const char * fileName) {
 //         else
 //             drawLine(delta+src.toBasis(localTheta, localPosition), delta+trg.toBasis(localTheta, localPosition), 0xA0A0A0FF );
 //     }
-// 
+//
 //     for( boost::tie(vert, verEnd)= w.a_visibility.vertex_collection().content() ; vert != verEnd ; ++vert ) {
 //         Float2 p( delta + (*vert).position.toBasis(localTheta, localPosition) );
 //         write( std::to_string( vert.index() ).c_str(), p+Float2(halfeps,-halfeps), 0xA0A0A0FF);
 //     }
 // }
-// 
+//
 // void Frame :: drawParticle( const Particle & bod, const Color &color )
 // {
 //     Float2 orientation( cos(bod.theta), sin(bod.theta) );
 // //    Color in(color);
 // //    in.alfa= 128;
 // //    fillCircle( bod.position, bod.radius, in );
-// 
+//
 //     fillCircle( bod.position, bod.radius*0.666f, color );
 //     drawCircle( bod.position, bod.radius, color );
 //     drawLine( bod.position, bod.position + orientation * bod.radius, color );
 // }
-// 
+//
 // void Frame :: drawParticle( const Particle & bod, const Color &color, const Float2 & delta )
 // {
 //     Float2 orientation( cos(bod.theta), sin(bod.theta) );
 // //    Color in(color);
 // //    in.alfa= 128;
 // //    fillCircle( delta+bod.position, bod.radius, in );
-// 
+//
 //     fillCircle( delta+bod.position, bod.radius*0.666f, color );
 //     drawCircle( delta+bod.position, bod.radius, color );
 //     drawLine( delta+bod.position, delta+bod.position + orientation * bod.radius, color );
 // }
+
+
+void Frame :: drawRing(const Ring & ring){
+  mia::Color color[]= { mia::Color(0x00AA00FF),  mia::Color(0xAA0000FF),  mia::Color(0xAAAA00FF) };// Ring::EState colors
+  drawCircle( Float2(0.f, 0.f), ring.distance(), mia::Color(0xFFFF0080) );
+  float angle= ring.angle();
+  for( int i= 0 ; i < ring.size() ; ++i ){
+    drawCircle( ring.center(i), ring.radius(), mia::Color(0x0000FF80) );
+    write( std::to_string(i).c_str(), ring.center(i), 0x0000FF80);
+    drawLine( ring.limit(i), ring.limit(i+1), color[ ring[i] ] );
+    write( std::to_string(i).c_str(), ring.limit(i), 0x0000FF80);
+  }
+}
 
 void Frame :: drawGridMap( const OGMap & map, const mia::Float2 & delta, bool /*info*/ )
 {
@@ -411,11 +424,11 @@ void Frame :: drawGridMap( const OGMap & map, const mia::Float2 & delta, bool /*
         limit.push_back( delta + map.origin() + Float2(0, map.height()*map.resolution()) );
         fillPolygon( limit, 0x606060FF );
     }
-    
+
     const int nbc(13);
     Color color[nbc]= {
          Color(0x800000FF), Color(0x008000FF), Color(0x000080FF), Color(0x000000FF),
-         Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF), 
+         Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF),
          Color(0x600020FF), Color(0x303030FF)/*Color(0x006020FF)*/, Color(0x206000FF), Color(0x200060FF),
          Color(0x002060FF),
     };
@@ -430,7 +443,7 @@ void Frame :: drawGridMap( const OGMap & map, const mia::Float2 & delta, bool /*
         limit.push_back( o + Float2(map.resolution(), 0) );
         limit.push_back( o + Float2(map.resolution(), map.resolution() ) );
         limit.push_back( o + Float2(0, map.resolution() ) );
-        
+
         switch( map[i][j] )
         {
             case -2:
@@ -459,26 +472,26 @@ void Frame :: drawGridMap( const OGMap & map, const mia::Float2 & delta, bool /*
 //         limit.push_back( origine + Float2(0, height*resolution) );
 //         fillPolygon( limit, 0x606060FF );
 //     }
-//     
+//
 //     const int nbc(14);
 //     Color color[nbc]= {
 //          Color(0x800000FF), Color(0x000080FF), Color(0x101010FF), Color(0x000000FF),
-//          Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF), 
+//          Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF),
 //          Color(0x600020FF), Color(0x006020FF), Color(0x206000FF), Color(0x200060FF),
 //          Color(0x002060FF), Color(0x008000FF)
 //     };
-// 
+//
 //     for( int i(0); i < width ; ++i )
 //         for( int j(0); j < height ; ++j )
 //     {
 //         Float2 o= origine + Float2(i*resolution, j*resolution);
-// 
+//
 //         std::list<Float2> limit;
 //         limit.push_back( o );
 //         limit.push_back( o + Float2(resolution, 0) );
 //         limit.push_back( o + Float2(resolution, resolution) );
 //         limit.push_back( o + Float2(0, resolution) );
-//         
+//
 //         switch( grid[i][j] )
 //         {
 //             case -1:
@@ -499,12 +512,12 @@ void Frame::drawVisiMap( const VisiMap & vm, const Float2 & delta, bool info )
     const unsigned int nbc(14);
     Color color[nbc]= {
          Color(0x800000FF), Color(0x606060FF), Color(0x000080FF), Color(0x000000FF),
-         Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF), 
+         Color(0x404000FF), Color(0x004040FF), Color(0x400040FF), Color(0x602000FF),
          Color(0x600020FF), Color(0x006020FF), Color(0x206000FF), Color(0x200060FF),
          Color(0x002060FF), Color(0x008000FF)
     };
     */
-    
+
     Color cType[2][Node2::type_size]= {
         { Color(0x1010A0A0), Color(0xB01010A0), Color(0x10B010A0) }, // type_free, type_obstacle, type_frontier
         { Color(0x1010A010), Color(0xB0101010), Color(0x10B01010) } // type_free, type_obstacle, type_frontier
@@ -512,14 +525,14 @@ void Frame::drawVisiMap( const VisiMap & vm, const Float2 & delta, bool info )
 
     // Frame :
     drawRect( delta+vm.a_origin, vm.a_size, Color(0x1010AAFF) );
-    
+
     Graph2::vertex_iterator vert, verEnd;
     for( boost::tie(vert, verEnd)= boost::vertices( vm.a_map ) ; vert != verEnd ; ++vert )
     {
 //         cout << vm.a_map[*vert] << endl;
 //         fillCircle( delta + vm.a_map[*vert], vm.a_epsilon, color[ (int)(*vert)%nbc ] );
 //         drawCircle( delta + vm.a_map[*vert], vm.a_epsilon, color[ (int)(vm.a_map[*vert].type)%nbc ] );
-        
+
         fillCircle( delta + vm.a_map[*vert], vm.a_epsilon, cType[1][ (int)(vm.a_map[*vert].type) ] );
         drawCircle( delta + vm.a_map[*vert], vm.a_epsilon, cType[0][ (int)(vm.a_map[*vert].type) ] );
     }
@@ -529,27 +542,27 @@ void Frame::drawVisiMap( const VisiMap & vm, const Float2 & delta, bool info )
     {
         Graph2::vertex_descriptor d_src( boost::source(*ited, vm.a_map) );
         Float2 src( vm.a_map[d_src] ), trg( vm.a_map[boost::target(*ited, vm.a_map)] );
-        
+
 //         drawLine(delta+src, delta+trg, color[ (int)(vm.a_map[d_src].type)%nbc ]);
         drawLine(delta+src, delta+trg, cType[0][ (int)(vm.a_map[d_src].type) ] );
     }
-    
+
     if(info)
         for( boost::tie(vert, verEnd)= boost::vertices( vm.a_map ) ; vert != verEnd ; ++vert )
             write( std::to_string( (int)(*vert) ).c_str(), delta + vm.a_map[*vert], 0xA0A0A0FF);
 }
 
 void Frame::drawVisiMapObstacle( const VisiMap & vm, const Float2 & delta )
-{   
+{
     Color cType[2]= { Color(0xB01010FF), Color(0xB0101080) };
 
     // Frame :
     drawRect( delta+vm.a_origin, vm.a_size, Color(0x1010AAFF) );
-    
+
     Graph2::vertex_iterator vert, verEnd;
     for( boost::tie(vert, verEnd)= boost::vertices( vm.a_map ) ; vert != verEnd ; ++vert )
         if( vm.a_map[*vert].type ==  mia::Node2::type_obstacle )
-    {  
+    {
         fillCircle( delta + vm.a_map[*vert], vm.a_epsilon, cType[1] );
         drawCircle( delta + vm.a_map[*vert], vm.a_epsilon, cType[0] );
     }
@@ -558,7 +571,7 @@ void Frame::drawVisiMapObstacle( const VisiMap & vm, const Float2 & delta )
     for( boost::tie(ited, end)= boost::edges( vm.a_map ) ; ited != end ; ++ited )
     {
         Graph2::vertex_descriptor d_src( boost::source(*ited, vm.a_map) );
-        
+
         if( vm.a_map[d_src].type == mia::Node2::type_obstacle )
         {
             Float2 src( vm.a_map[d_src] ), trg( vm.a_map[boost::target(*ited, vm.a_map)] );

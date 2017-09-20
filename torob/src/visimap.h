@@ -20,7 +20,7 @@
 #ifndef VISIMAP_H
 #define VISIMAP_H
 
-//mia: 
+//mia:
 #include "tools.h"
 //#include "link.h"
 #include "ogmap.h"
@@ -42,11 +42,11 @@ public:
     };
 
     EType type;
-    
+
     Node2():Float2(),type(type_free){}
     Node2(float x, float y, EType t= type_free):Float2(x, y),type(t){}
     Node2(Float2 f2, EType t= type_free):Float2(f2),type(t){}
-    
+
     Node2 & operator=(const Node2 & n)
     {
         x= n.x;
@@ -54,7 +54,7 @@ public:
         type= n.type;
         return *this;
     }
-    
+
     Node2 & operator=(const Float2 & n)
     {
         x= n.x;
@@ -96,33 +96,33 @@ public:
     virtual std::list<Graph2::vertex_descriptor> getVertices( Float2 pos, float dist )const;
 
     virtual std::list<Graph2::edge_descriptor> getEdges( Node2::EType srcT, Node2::EType trgT )const;
-    
-    virtual int verticesSize(){ return boost::num_vertices(a_map); };
-    virtual int edgesSize(){ return boost::num_edges(a_map); };
-    
+
+    virtual int verticesSize()const{ return boost::num_vertices(a_map); };
+    virtual int edgesSize()const{ return boost::num_edges(a_map); };
+
     //setter:
     virtual void setRefPosition(const Float2 & pos){ a_map[0]= Node2(pos, Node2::type_free); }
     virtual void setEpsilon(float esp){ a_epsilon= esp; }
-    
+
     virtual void initialize_frame();// Generate origine and size frame coordinates.
 
     // Node managment :
     virtual void remove_node(Node2::EType type);
-    
+
     // 2D transformation :
     virtual void transform( const Transform & t );
-    
+
     // Simple goal detection :
     virtual Float2 goal_closest( const Float2 &ref )const;
     virtual inline Float2 goal_closest()const{ return goal_closest( getRefPosition() ); }
     virtual Float2 goal_random()const;
     virtual Float2 goal_largest()const;
-    virtual Float2 goal_largest_random( int range )const; 
+    virtual Float2 goal_largest_random( int range )const;
 
     // All goals:
 //    virtual std::list<std::pair<Float2,Float2>> list_frontier()const;
     virtual std::list<valued<Float2>> list_goal()const;
-    
+
     // Initialization:
     virtual void initialize( const OGMap & grid );
     virtual void initialize( const OGMap & grid, Float2 refposition, float epsilon );
@@ -133,24 +133,24 @@ public:
     virtual int obstacle_edge_regression();
     virtual int obstacle_node_regression();
     virtual void obstacle_regression(){ do{ obstacle_edge_regression(); }while( obstacle_node_regression() ); }
-    
+
     // Initialization Tools:
     virtual bool replace_if_posible( int test, int pivot );
-    
+
     // Fusion:
     virtual void add( const VisiMap & vm, const Transform & t );
-    
+
     // File interaction:
     virtual void load( const std::string &  file );
     virtual void save( const std::string &  file )const;
-    
+
     // Data interaction:
     virtual void load( const mia::Data &  d );
     virtual mia::Data save()const;
     virtual void load2( const mia::Data &  d );
     virtual mia::Data save2()const;
     virtual void toSVG( std::ostream & os )const;
-    
+
     // Vertices transformation:
     virtual void sortVerticesByType(int*, int*, int*)const;
 };

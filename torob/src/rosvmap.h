@@ -49,14 +49,15 @@ public:
     // Constructor Destructor:
     RosVmap();
     ~RosVmap();
-   
+
     // setter:
     void setEpsilon( float e ){ visimap.setEpsilon(e); }
     int add_vertex(const mia::Float2 & position, mia::Node2::EType t );
-    
+
     // getter:
+    int size()const{ return visimap.verticesSize(); }
     float getEpsilon()const{ return visimap.getEpsilon(); }
-    
+
     bool free_segment(const mia::Float2 & A, const mia::Float2 & B );
     bool safe_move( const mia::Float2 & pos );
     bool is_vertex_on_segment(const mia::Float2 & A, const mia::Float2 & B, mia::Node2::EType t, int & iNode );
@@ -68,24 +69,24 @@ public:
     void data_subscriber( const torob_msgs::Data& vmap );
     void vmap_subscriber( const torob_msgs::VectorMap& vmap );
     std::list<mia::Float2> scan_subscriber( const sensor_msgs::LaserScan& scan, bool closed= false );
-    
+
     // publisher:
     void publish_data( ros::Publisher & publisher, const std_msgs::Header& header );
     void publish_vmap( ros::Publisher & publisher, const std_msgs::Header& header );
     void publish_poses( ros::Publisher & publisher, const std_msgs::Header& header, mia::Node2::EType t= mia::Node2::type_frontier );
     void publish_points( ros::Publisher & publisher, const std_msgs::Header& header, mia::Node2::EType t= mia::Node2::type_frontier );
     void publish_frontier( ros::Publisher & publisher, const std_msgs::Header& h, float radius);
-    
+
     // Map manipulation:
     void merge( const RosVmap & toMerge, const mia::Float2 & translation );
     void extraFrontierNodes(float dist);
- 
+
     // Margent interface:
     void toTorobData( const mia::Data & d, torob_msgs::Data * td );
     void toMargentData( const torob_msgs::Data & td, mia::Data * d );
 
     void save_visibility(const std::string & file_path)const{ visimap.save( file_path ); }
-    
+
 };
 
 #endif // MIA_ROSVMAP_H

@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(torob_msgs)
 
-# Activate C++11 : 
+# Activate C++11 :
 SET(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wextra" )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
+find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
 )
@@ -52,6 +52,7 @@ add_message_files(
     Node.msg
     Edge.msg
     VectorMap.msg
+    Ring.msg
 )
 
 ## Generate services in the 'srv' folder

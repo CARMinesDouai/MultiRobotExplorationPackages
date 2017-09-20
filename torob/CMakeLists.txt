@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(torob)
 
-# Activate C++11 : 
+# Activate C++11 :
 SET(CMAKE_CXX_FLAGS "-std=c++11" )
 # SET(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra" )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
+find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   std_msgs
@@ -136,8 +136,11 @@ include_directories( include ${catkin_INCLUDE_DIRS} )
 add_executable( random_goal src/main_random_goal.cpp )
 target_link_libraries( random_goal ${catkin_LIBRARIES} )
 
-add_executable( move src/rosvmap.cpp src/ogmap.cpp src/visimap.cpp src/impact.cpp src/float2.cpp src/data.cpp src/main_move.cpp )
-target_link_libraries( move ${Boost_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
+add_executable( vmap_move src/rosvmap.cpp src/ogmap.cpp src/visimap.cpp src/impact.cpp src/float2.cpp src/data.cpp src/main_vmap_move.cpp )
+target_link_libraries( vmap_move ${Boost_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
+
+add_executable( ring_move src/float2.cpp src/impact.cpp src/ring.cpp src/main_ring_move.cpp )
+target_link_libraries( ring_move ${Boost_LIBRARIES} ${catkin_LIBRARIES} )
 
 add_executable( merge src/rosvmap.cpp src/ogmap.cpp src/visimap.cpp src/impact.cpp src/float2.cpp src/data.cpp src/main_merge.cpp )
 target_link_libraries( merge ${Boost_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
@@ -161,7 +164,7 @@ target_link_libraries( vmap_server ${Boost_LIBRARIES} ${catkin_LIBRARIES} yaml-c
 
 ## Build SDL2 nodes:
 
-add_executable( viewer src/rosvmap.cpp src/ogmap.cpp src/visimap.cpp src/impact.cpp src/float2.cpp src/data.cpp src/main_viewer.cpp src/roscontrol.cpp src/frame.cpp )
+add_executable( viewer src/rosvmap.cpp src/ring.cpp src/ogmap.cpp src/visimap.cpp src/impact.cpp src/float2.cpp src/impact.cpp src/data.cpp src/main_viewer.cpp src/roscontrol.cpp src/frame.cpp )
 target_link_libraries( viewer ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${SDL2_LIBRARIES} yaml-cpp SDL2_gfx)
 
 
