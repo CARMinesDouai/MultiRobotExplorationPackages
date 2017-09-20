@@ -11,7 +11,7 @@
   <arg name="odom_topic" default="odom" />
   <arg name="laser_topic" default="scan" />
 
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+  <node pkg="move_base" type="move_base" respawn="true" name="move_base" output="screen">
     <rosparam file="$(find adaptive_local_planner)/launch/includes/costmap_common_params.yaml" command="load" ns="global_costmap"/> 
     <rosparam file="$(find adaptive_local_planner)/launch/includes/global_costmap_params.yaml" command="load" />
 

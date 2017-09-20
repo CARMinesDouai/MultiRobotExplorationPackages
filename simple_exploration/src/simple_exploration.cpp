@@ -6,61 +6,93 @@
 #include <actionlib/client/simple_action_client.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <time.h>       /* time */
+#include <time.h> /* time */
 
 using namespace std;
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-geometry_msgs::PoseStamped robot_cur_pose, simple_goal, robot_prev_pose;
+geometry_msgs::PoseStamped robot_cur_pose, simple_goal;
 sensor_msgs::PointCloud phrontiers;
 bool getingPose;
 bool frontiersExist;
-//vector<float> min_search_radius, max_search_radius;
-bool cant_have_local_planner;
 visualization_msgs::MarkerArray mArraySentGoals;
-geometry_msgs::Point32 frontier;
+geometry_msgs::Point32 frontier, old_frontier;
 ros::Publisher pub_goal, pub_goal_rviz;
 actionlib_msgs::GoalStatusArray moveBaseStatus;
+double goal_tolerance, frontier_tolerance;
 int gols_inc;
 
-bool PhrontiersCallback(const sensor_msgs::PointCloud::ConstPtr& msg){
-    //check the close ponits to visite
+void publishGoal();
+void ProntiersTrack(geometry_msgs::PoseStamped p);
 
-    int pc_size=0;
-    if(msg->points.size()){
-        frontiersExist=true;
+template <class T1, class T2>
+double distance(T1 from, T2 to)
+{
+    // Euclidiant dist between a point and the robot
+    return sqrt(pow(to.x - from.x, 2) + pow(to.y - from.y, 2));
+}
+/*bool frontier_check(geometry_msgs::Point32 fr)
+{
+    vector<geometry_msgs::Point>::iterator it;
+    for(it = black_list.begin(); it != black_list.end(); it++)
+    {
+        double dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(*it, fr);
+        if(dist < 0.4) return false;
+    }
+    return true;
+}*/
+bool PhrontiersCallback(const sensor_msgs::PointCloud::ConstPtr &msg)
+{
+    frontiersExist = false;
+    int pc_size = 0;
+    if (msg->points.size())
+    {
+        //frontiersExist=true;
         pc_size = msg->points.size();
-        cout<<" -_- [ Frontiers number "<<pc_size<<" ] -_-  "<<endl;
-    }else{
-        frontiersExist=false;
-        cout<<"!!![ No Frontiers, *** Exploration Done *** ]!!!"<<endl;
+        ROS_INFO("Frontiers number: %d", pc_size);
+    }
+    else
+    {
+        ROS_INFO("!!![ No Frontiers, *** Exploration Done *** ]!!!");
         return false;
     }
 
-    float dist = 1000;
-    float dx, dy;
+    float mindist = 0, dist, fr_dist;
     if (!getingPose)
     {
-        int r = rand() % pc_size;
-        cout<<"Choosing the next goal: "<<r<<endl;
-        frontier = msg->points[r];
-/*      for(int i=0;i<pc_size;i++)
+        //frontiersExist=true;
+        //int r = rand() % pc_size;
+        //frontier = msg->points[r];
+        old_frontier = frontier;
+        for (int i = 0; i < pc_size; i++)
         {
-            dx=robot_cur_pose.pose.position.x-msg->points[i].x;
-            dy=robot_cur_pose.pose.position.y-msg->points[i].y;
-            if (sqrt(dx*dx+dy*dy)<dist)
+            dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(robot_cur_pose.pose.position, msg->points[i]);
+            fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, msg->points[i]);
+            if ((mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance)
             {
                 frontier = msg->points[i];
-                dist = sqrt(dx*dx+dy*dy);
+                mindist = dist;
+                frontiersExist = true;
             }
+        }
+
+        /*if (!frontiersExist)
+        {
+            dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(robot_cur_pose.pose.position, old_frontier);
+            if(dist > frontier_tolerance)
+            {
+                frontier.x = robot_cur_pose.pose.position.x;
+                frontier.y = robot_cur_pose.pose.position.y;
+                publishGoal();
+            }
+            return false;
         }*/
     }
+    return true;
 }
 bool closeToGoal()
 {
-    float dx, dy;
-    dx=robot_cur_pose.pose.position.x - simple_goal.pose.position.x;
-    dy=robot_cur_pose.pose.position.y - simple_goal.pose.position.y;
-    return sqrt(dx*dx+dy*dy) < 0.8;
+    double dist = distance<geometry_msgs::Point, geometry_msgs::Point>(robot_cur_pose.pose.position, simple_goal.pose.position);
+    return dist < goal_tolerance;
 }
 
 void ProntiersTrack(geometry_msgs::PoseStamped p)
@@ -75,14 +107,20 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
     m.pose.position.x = p.pose.position.x;
     m.pose.position.y = p.pose.position.y;
     m.pose.position.z = 0.0;
-    m.scale.x = 0.1;m.scale.y = 0.1;m.scale.z = 0.1;m.color.r = 1.0;
-    m.color.g = 0.0;m.color.b = 0.5;m.color.a = 1.0;
+    m.scale.x = 0.1;
+    m.scale.y = 0.1;
+    m.scale.z = 0.1;
+    m.color.r = 1.0;
+    m.color.g = 0.0;
+    m.color.b = 0.5;
+    m.color.a = 1.0;
     m.lifetime = ros::Duration(0);
     m.action = visualization_msgs::Marker::ADD;
 
-    if(gols_inc>=999) gols_inc=0;
-    cout<<"gols_inc: "<<gols_inc<<endl;
-    mArraySentGoals.markers[gols_inc]=(visualization_msgs::Marker(m));
+    if (gols_inc >= 999)
+        gols_inc = 0;
+    //cout<<"gols_inc: "<<gols_inc<<endl;
+    mArraySentGoals.markers[gols_inc] = (visualization_msgs::Marker(m));
     m.action = visualization_msgs::Marker::DELETE;
 
     //mArraySentGoals.markers.push_back(visualization_msgs::Marker(m));
@@ -103,101 +141,89 @@ void ProntiersTrack(geometry_msgs::PoseStamped p)
     //   cout<<"goal X: "<<mArraySentGoals.markers[j].pose.position.x<<" goal Y: "<<mArraySentGoals.markers[j].pose.position.y<<endl;
 }
 
-void publishGoal(){
+void publishGoal()
+{
     //goalWasPublished= true;
-    simple_goal.header.frame_id="/map";
-    simple_goal.pose.position.x=frontier.x;
-    simple_goal.pose.position.y=frontier.y;
+    simple_goal.header.frame_id = "/map";
+    simple_goal.pose.position.x = frontier.x;
+    simple_goal.pose.position.y = frontier.y;
 
-    simple_goal.pose.orientation.x=0;simple_goal.pose.orientation.y=0;simple_goal.pose.orientation.z=0;simple_goal.pose.orientation.w=1;
-    cout<<"next frontier "<<simple_goal.pose.position.x<<" -- "<<simple_goal.pose.position.y<<endl;
+    simple_goal.pose.orientation.x = 0;
+    simple_goal.pose.orientation.y = 0;
+    simple_goal.pose.orientation.z = 0;
+    simple_goal.pose.orientation.w = 1;
+
     pub_goal.publish(simple_goal);
 
-    ProntiersTrack(simple_goal);
+    //ProntiersTrack(simple_goal);
 }
 
-void RobotPoseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg){
-    //check the close ponits to visite
-    getingPose=true;
-    robot_cur_pose.pose  = msg->pose;
-    /*if(!prev_pose_was_taken)
-        robot_prev_pose.pose = robot_cur_pose.pose;
-    //we check if we are close to the prev. pose
-    if(robot_prev_pose.pose.position.x==robot_cur_pose.pose.position.x && robot_prev_pose.pose.position.y==robot_cur_pose.pose.position.y)
-    {
-        //count 500 times, which is equivqlent to 5s
-        inc_pose++;
-        //cout<<inc_pose<<endl;
-        if(inc_pose>500){
-            goalWasPublished=false;
-            searchAnotherFrontier=true;
-            inc_pose=0;
-            cout<<"!!!!!!!!!!!!! robot at the same position !!!!!!!!!!!!!"<<endl;
-        }else{
-
-        }
-    }else{
-        robot_prev_pose.pose = robot_cur_pose.pose;
-    }*/
-
-    getingPose=false;
-    //cout<<"<<<<<<<<<<<<<<<<<<<<<<<from pose robot"<<endl;
+void RobotPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    robot_cur_pose.pose = msg->pose;
+    getingPose = false;
 }
 
-bool StatusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr& msg){
+bool StatusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr &msg)
+{
     moveBaseStatus = *msg;
 }
 
-bool readyForNewGoal() {
-    if(!frontiersExist) return false;
-    for(int i = 0 ; i< moveBaseStatus.status_list.size(); i++)
+bool readyForNewGoal()
+{
+    if (closeToGoal())
+        return true;
+    if(frontier.x == 0 && frontier.y == 0) return true;
+    if (!frontiersExist)
+        return false;
+    for (int i = 0; i < moveBaseStatus.status_list.size(); i++)
     {
-        int n=moveBaseStatus.status_list[i].status;
-        //cout<<"move base status "<<closeToGoal()<<" "<<n<<endl;
-        if (moveBaseStatus.status_list[i].status == 1) return (false || closeToGoal());
+        int stat = moveBaseStatus.status_list[i].status;
+        if (stat == 1)
+            return false;
+        //else if (stat == 4)
+        //    return true;
+        /*else if(stat == 4) // || stat == 5
+        {
+            black_list.push_back(simple_goal.pose.position);
+            break;
+        }*/
     }
     return true;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-   ros::init(argc, argv, "simple_exploration");
+    ros::init(argc, argv, "simple_exploration");
 
-   ros::NodeHandle n_;
+    ros::NodeHandle n_;
+    n_.param<double>("goal_tolerance", goal_tolerance, 0.3);
+    n_.param<double>("frontier_tolerance", frontier_tolerance, 0.3);
+    //get the curent robot pose
+    ros::Subscriber sub_ph = n_.subscribe<sensor_msgs::PointCloud>("/phrontier_global", 100, &PhrontiersCallback);
+    ros::Subscriber sub_status = n_.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 100, &StatusCallback);
+    ros::Subscriber sub_pr = n_.subscribe<geometry_msgs::PoseStamped>("/posegmapping", 10, &RobotPoseCallback);
+    pub_goal = n_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 10);
+    pub_goal_rviz = n_.advertise<visualization_msgs::MarkerArray>("/all_sent_goals", 10);
+    frontier.x = 0.0;
+    frontier.y = 0.0;
+    getingPose = true;
+    frontiersExist = false;
+    //gols_inc = 0;
+   //mArraySentGoals.markers.resize(1000);
 
-   //get the curent robot pose
-   ros::Subscriber sub_ph     = n_.subscribe<sensor_msgs::PointCloud>("/phrontier_global", 100, &PhrontiersCallback);
-   ros::Subscriber sub_status = n_.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 100, &StatusCallback);
-   ros::Subscriber sub_pr     = n_.subscribe<geometry_msgs::PoseStamped>("/posegmapping", 10, &RobotPoseCallback);
-   pub_goal                   = n_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal",10);
-   pub_goal_rviz              = n_.advertise<visualization_msgs::MarkerArray>("/all_sent_goals",10);
+    /* initialize random seed: */
+    srand(time(NULL));
 
-   getingPose=true;
-   //goalWasPublished=false;
-   frontiersExist=false;
-   gols_inc=0;
-   mArraySentGoals.markers.resize(1000);
-   //values bellow can get from launch file
-//   min_search_radius.resize(6);
-//   min_search_radius[0]=2.0;min_search_radius[1]=1.8;min_search_radius[2]=1.6;min_search_radius[3]=1.4;min_search_radius[4]=1.2;min_search_radius[5]=1.0;
-//   max_search_radius.resize(6);
-//   max_search_radius[0]=5.0;max_search_radius[1]=6.8;max_search_radius[2]=7.6;max_search_radius[3]=8.4;max_search_radius[4]=9.2;max_search_radius[5]=30.0;
-
-   /* initialize random seed: */
-   srand (time(NULL));
-
-   ros::Rate loop_rate(3);
-   while(ros::ok())
-   {
-       if(readyForNewGoal())
+    ros::Rate loop_rate(10);
+    while (ros::ok())
+    {
+        ros::spinOnce();
+        if (readyForNewGoal())
         {
             publishGoal();
         }
-
-        ros::spinOnce();
         loop_rate.sleep();
-   }
-   return 1;
+    }
+    return 1;
 }
-
-

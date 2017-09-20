@@ -104,10 +104,10 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     ros::Subscriber  sub_status;
     // subcribes to related topics
     
-    sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
+    /*sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
         [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
             this->global_status = *msg;
-        });
+        });*/
     
 
     ros::spinOnce();
@@ -140,14 +140,14 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     }
 
     
-    for(int i = 0 ; i< global_status.status_list.size(); i++)
+    /*for(int i = 0 ; i< global_status.status_list.size(); i++)
     {
-        if(global_status.status_list[i].status == 4 || global_status.status_list[i].status == 5)
+        if(global_status.status_list[i].status == 4) // || global_status.status_list[i].status == 5)
         {
             ROS_WARN("This is not a valid global path, i will not attemp to compute velocity command for it");
             return false;
         }
-    }
+    }*/
 
     // now calculate the potential field toward the local goal
     double resolution = this->local_map.info.resolution;
@@ -235,7 +235,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
             double x = fabs(mit->second.z*sin(theta));
             if(x < robot_radius && mit->second.z < future_d)
             {
-                double vf = attractive_gain*(1.0 / robot_radius - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
+                double vf = recovery_amplification*repulsive_gain*(1.0 / robot_radius - 1.0 / mit->second.z) / (mit->second.z * mit->second.z);
                 cmd.setX( cmd.x() + vf* mit->second.x);
                 cmd.setY( cmd.y()+ vf* mit->second.y);
                 is_collision = true;
@@ -324,10 +324,10 @@ bool PFLocalPlanner::my_pose(geometry_msgs::PoseStamped *pose)
 }
 bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
 {
-    // just get last pose in global goal for now
     if (this->global_plan.size() == 0)
+    {
         return false;
-   
+    }
     geometry_msgs::PoseStamped pose;
     if (!this->my_pose(&pose))
     {
@@ -349,6 +349,7 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
     double d, dx, dy;
     bool has_goal = false;
     tf::Vector3 candidate;
+    int i=0;
     for (it = this->global_plan.begin(); it != this->global_plan.end(); it++)
     {
         candidate.setX(it->pose.position.x);
@@ -357,11 +358,18 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
         geometry_msgs::Point tmp;
         tmp.x = candidate.x();
         tmp.y = candidate.y();
+        if(it->pose.position.z == 1.0) continue;
         d = this->dist(pose.pose.position,tmp);
         if (d > max_local_goal_dist)
             break;
+        i++;
     }
-
+    if(it != global_plan.end())
+        it->pose.position.z = 1.0;
+    //global_plan = vector<geometry_msgs::PoseStamped>(
+    //    make_move_iterator(global_plan.begin() + i),
+    //    make_move_iterator(global_plan.end()));
+   
     _goal->pose.position.x = candidate.x();
     _goal->pose.position.y = candidate.y();
 
@@ -414,6 +422,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<int>("local_map_th", local_map_th, 90);
         private_nh.param<int>("recovery_attemps", recovery_attemps, 10);
         private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
+        private_nh.param<double>("recovery_amplification", recovery_amplification, 2.0);
         private_nh.param<double>("field_w", dw, 4.0);
         private_nh.param<double>("field_h", dh, 4.0);
         private_nh.param<double>("local_map_resolution", this->map_resolution, 0.05);
