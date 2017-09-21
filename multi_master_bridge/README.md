@@ -1,5 +1,5 @@
 ## Multi-masters Bridge
-This package defines base protocol for multi-masters communication (via a TCP/UDP link - UDP is a work in progress ). The idea is that each robot runs it own master, and these masters are able to automatically discover and communicate with each other for data exchange. This is achieved based on three main nodes defined by the protocol
+This package defines base protocol for multi-masters communication (via a TCP/UDP link - UDP is a work in progress ). The idea is that each robot runs its own master, and these masters are able to automatically discover and communicate with each other for data exchange. This is achieved based on three main nodes defined by the protocol
 - **beacon** : a robot will periodically broadcast its identity message to the network to identify itself.
 - **robot_discover** : this node will listen to the broadcast address and discover all robots available on the network. It will then publish a topic */new_robot* which contain a list of available robots.
 - **portal** : is used mainly for inter-masters data exchange. This node wait for a connection from another master. When a connection is etablished, the node receives raw data from the sender and convert it to ROS message then publish the message to a dedicated topic.
@@ -40,7 +40,7 @@ int PointHelper::rosMsgToRaw(uint8_t** data)
 }
 ```
 
-The **rosMsgToRaw** method defines the serialization process of a ROS message (geometry_msgs::Point), this defined how to convert a ROS message to a bytes array. The **rawToRosMsg** method defines the inverse process of **rosMsgToRaw**.
+The **rosMsgToRaw** method defines the serialization process of a ROS message (geometry_msgs::Point), this defines how to convert a ROS message to a bytes array. The **rawToRosMsg** method defines the inverse process of **rosMsgToRaw**.
 
 For example implementations, please take a look at the predefined hepers in the **src/helpers** folder. Note that a helper can be used inside another helpers.
 
