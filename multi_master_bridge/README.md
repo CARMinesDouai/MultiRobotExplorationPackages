@@ -74,7 +74,7 @@ PointHelper hp;
 string my_ip = "10.1.20.19"; 
 // consume the message
 hp.consume((void*)&data);
-// prepare raw data to be send
+// prepare raw data to be sent
 struct portal_data_t d = hp.getPortalDataFor(my_ip.c_str());
 // the topic will be published on received master
 d.publish_to = "/dest_point";
