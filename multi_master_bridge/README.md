@@ -88,7 +88,7 @@ teleport_raw_data( "10.1.20.100",9191,d);
 ```
 Note that the destination master (ip, port, etc.) can be fetched from the */new_robot* topic published by the **robot_discover** node. 
 
-For an complete example, please take a look at the *src/map_feeding.cpp* node example to see how to exchange a complex ROS message between masters.
+For a complete example, please take a look at the *src/map_feeding.cpp* node example to see how to exchange a complex ROS message between masters.
 
 ### Receiving ROS message from other master
 
