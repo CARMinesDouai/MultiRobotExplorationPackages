@@ -101,17 +101,6 @@ map<int, geometry_msgs::Point> PFLocalPlanner::cc_min_dist_to_robot(tf::StampedT
 }
 bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
 {
-    ros::Subscriber  sub_status;
-    // subcribes to related topics
-    
-    /*sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
-        [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
-            this->global_status = *msg;
-        });*/
-    
-
-    ros::spinOnce();
-
     //return false;
     
     geometry_msgs::PoseStamped pose;
@@ -119,6 +108,19 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     {
         ROS_ERROR("Cannot get pose on the goal frame: %s", this->goal_frame_id.c_str());
         return false;
+    }
+
+    if(rotation > 0)
+    {
+        // do a in place rotation
+        rotation -= 0.2;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.linear.z = 0.0;
+        cmd_vel.angular.x = 0.0;
+        cmd_vel.angular.y = 0.0; // ?
+        cmd_vel.angular.z = 1.2;
+        return true;
     }
 
     geometry_msgs::PoseStamped goal;
@@ -139,8 +141,17 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         return false;
     }
 
+    /*ros::Subscriber  sub_status;
+    // subcribes to related topics
     
-    /*for(int i = 0 ; i< global_status.status_list.size(); i++)
+    sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10,
+        [this](const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
+            this->global_status = *msg;
+        });
+
+    ros::spinOnce();
+
+    for(int i = 0 ; i< global_status.status_list.size(); i++)
     {
         if(global_status.status_list[i].status == 4) // || global_status.status_list[i].status == 5)
         {
@@ -358,17 +369,17 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
         geometry_msgs::Point tmp;
         tmp.x = candidate.x();
         tmp.y = candidate.y();
-        if(it->pose.position.z == 1.0) continue;
+       // if(it->pose.position.z == 1.0) continue;
         d = this->dist(pose.pose.position,tmp);
         if (d > max_local_goal_dist)
             break;
         i++;
     }
-    if(it != global_plan.end())
-        it->pose.position.z = 1.0;
-    //global_plan = vector<geometry_msgs::PoseStamped>(
-    //    make_move_iterator(global_plan.begin() + i),
-    //    make_move_iterator(global_plan.end()));
+    //if(it != global_plan.end())
+    //    it->pose.position.z = 1.0;
+    global_plan = vector<geometry_msgs::PoseStamped>(
+        make_move_iterator(global_plan.begin() + i),
+        make_move_iterator(global_plan.end()));
    
     _goal->pose.position.x = candidate.x();
     _goal->pose.position.y = candidate.y();
@@ -446,6 +457,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
                 this->local_map_pub.publish(this->local_map);
            });
         initialized_ = true;
+        rotation = 2*M_PI;
     }
     else
     {

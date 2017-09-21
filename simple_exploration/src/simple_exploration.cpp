@@ -13,7 +13,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 geometry_msgs::PoseStamped robot_cur_pose, simple_goal;
 sensor_msgs::PointCloud phrontiers;
 bool getingPose;
-bool frontiersExist;
+bool frontiersExist, random_frontier;
 visualization_msgs::MarkerArray mArraySentGoals;
 geometry_msgs::Point32 frontier, old_frontier;
 ros::Publisher pub_goal, pub_goal_rviz;
@@ -59,21 +59,28 @@ bool PhrontiersCallback(const sensor_msgs::PointCloud::ConstPtr &msg)
     float mindist = 0, dist, fr_dist;
     if (!getingPose)
     {
-        //frontiersExist=true;
-        //int r = rand() % pc_size;
-        //frontier = msg->points[r];
-        old_frontier = frontier;
-        for (int i = 0; i < pc_size; i++)
+        if(random_frontier)
         {
-            dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(robot_cur_pose.pose.position, msg->points[i]);
-            fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, msg->points[i]);
-            if ((mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance)
+            frontiersExist=true;
+            int r = rand() % pc_size;
+            frontier = msg->points[r];
+        }
+        else 
+        {
+            old_frontier = frontier;
+            for (int i = 0; i < pc_size; i++)
             {
-                frontier = msg->points[i];
-                mindist = dist;
-                frontiersExist = true;
+                dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(robot_cur_pose.pose.position, msg->points[i]);
+                fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, msg->points[i]);
+                if ((mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance)
+                {
+                    frontier = msg->points[i];
+                    mindist = dist;
+                    frontiersExist = true;
+                }
             }
         }
+        
 
         /*if (!frontiersExist)
         {
@@ -87,7 +94,7 @@ bool PhrontiersCallback(const sensor_msgs::PointCloud::ConstPtr &msg)
             return false;
         }*/
     }
-    return true;
+    return frontiersExist;
 }
 bool closeToGoal()
 {
@@ -171,23 +178,16 @@ bool StatusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr &msg)
 
 bool readyForNewGoal()
 {
-    if (closeToGoal())
-        return true;
     if(frontier.x == 0 && frontier.y == 0) return true;
     if (!frontiersExist)
         return false;
+    if (closeToGoal())
+        return true;
     for (int i = 0; i < moveBaseStatus.status_list.size(); i++)
     {
         int stat = moveBaseStatus.status_list[i].status;
-        if (stat == 1)
-            return false;
-        //else if (stat == 4)
-        //    return true;
-        /*else if(stat == 4) // || stat == 5
-        {
-            black_list.push_back(simple_goal.pose.position);
-            break;
-        }*/
+        if (stat == 1) return false;
+        // if (stat == 4 || stat == 5) return true;
     }
     return true;
 }
@@ -196,9 +196,14 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "simple_exploration");
 
-    ros::NodeHandle n_;
+    ros::NodeHandle n_("~");
     n_.param<double>("goal_tolerance", goal_tolerance, 0.3);
     n_.param<double>("frontier_tolerance", frontier_tolerance, 0.3);
+    n_.param<bool>("random_frontier", random_frontier, false);
+
+    ROS_INFO("Goal tolerance %f", goal_tolerance);
+    ROS_INFO("frontier tolerance %f", frontier_tolerance);
+    ROS_INFO("Random frontier:%s", random_frontier?"true":"false");
     //get the curent robot pose
     ros::Subscriber sub_ph = n_.subscribe<sensor_msgs::PointCloud>("/phrontier_global", 100, &PhrontiersCallback);
     ros::Subscriber sub_status = n_.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 100, &StatusCallback);

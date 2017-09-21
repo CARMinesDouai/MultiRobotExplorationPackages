@@ -86,7 +86,7 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     double get_angle(geometry_msgs::Point, geometry_msgs::Point, geometry_msgs::Point);
     map<int,geometry_msgs::Point> cc_min_dist_to_robot(tf::StampedTransform localToCmd, geometry_msgs::PoseStamped pose);
 
-    double robot_radius,map_resolution,recovery_amplification;
+    double robot_radius,map_resolution,recovery_amplification, rotation;
     int min_obstacle_size_px, local_map_th, recovery_attemps, fw, fh;
     std::string goal_frame_id;
     std::string cmd_frame_id, scan_topic;
