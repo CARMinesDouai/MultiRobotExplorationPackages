@@ -17,5 +17,5 @@ oscillation_distance: 0.2
 # local planner - default is trajectory rollout
 base_local_planner: "local_planner/PFLocalPlanner" #PFLocalPlanner AdaptiveLocalPlanner
 
-#base_global_planner: "navfn/NavfnROS" #alternatives: global_planner/GlobalPlanner, carrot_planner/CarrotPlanner
+base_global_planner: "global_planner/GlobalPlanner" #alternatives: , carrot_planner/CarrotPlanner
 

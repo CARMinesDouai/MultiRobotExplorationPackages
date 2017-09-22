@@ -127,7 +127,8 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     if (!this->select_goal(&goal))
     {
         ROS_ERROR("No local goal is selected");
-        return false;
+        reached = true;
+        return true;
     }
 
     tf::StampedTransform localToCmd;
@@ -173,7 +174,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     // attractive potential
     double robot_to_goal = this->dist(pose.pose.position, goal.pose.position);
 
-    if (robot_to_goal < 0.1) this->reached = true;
+    if (robot_to_goal < goal_tolerance) this->reached = true;
 
     if (robot_to_goal < safe_goal_dist)
     {
@@ -337,6 +338,7 @@ bool PFLocalPlanner::select_goal(geometry_msgs::PoseStamped *_goal)
 {
     if (this->global_plan.size() == 0)
     {
+        //reached = true;
         return false;
     }
     geometry_msgs::PoseStamped pose;
@@ -432,6 +434,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<bool>("verbose", this->verbose, true);
         private_nh.param<int>("local_map_th", local_map_th, 90);
         private_nh.param<int>("recovery_attemps", recovery_attemps, 10);
+        private_nh.param<double>("goal_tolerance", goal_tolerance, 0.2);
         private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
         private_nh.param<double>("recovery_amplification", recovery_amplification, 2.0);
         private_nh.param<double>("field_w", dw, 4.0);
