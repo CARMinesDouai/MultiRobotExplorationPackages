@@ -13,6 +13,7 @@ sensor_msgs::PointCloud global_frontiers;
 geometry_msgs::Point32 frontier, old_frontier;
 tf::TransformListener* listener;
 actionlib_msgs::GoalStatusArray global_status;
+std::vector<geometry_msgs::Point32> reached_frontiers;
 template <class T1, class T2>
 double distance(T1 from, T2 to)
 {
@@ -46,6 +47,18 @@ void status_callback(const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
     global_status = *msg;
 }
 
+bool frontier_blacklisting( geometry_msgs::Point32 p)
+{
+    std::vector<geometry_msgs::Point32>::iterator it;
+
+    for(it = reached_frontiers.begin(); it != reached_frontiers.end(); it++)
+    {
+        double dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(*it, p);
+        if(dist < goal_tolerance) return false;
+    }
+    return true;
+}
+
 bool find_next_frontier()
 {
    
@@ -65,6 +78,8 @@ bool find_next_frontier()
             if (stat == 1) return false;
         }
 
+    } else {
+        reached_frontiers.push_back(frontier);
     }
 
     
@@ -87,6 +102,7 @@ bool find_next_frontier()
     old_frontier = frontier;
     for (int i = 0; i < global_frontiers.points.size(); i++)
     {
+        if(!frontier_blacklisting(global_frontiers.points[i])) continue;
         dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(pose.position, global_frontiers.points[i]);
         fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, global_frontiers.points[i]);
         if ( ( old_frontier.x == 0 && old_frontier.y == 0 ) ||( (mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance))
@@ -119,7 +135,7 @@ int main(int argc, char**argv)
 
     srand(time(NULL));
 
-    ros::Rate loop_rate(1.0);
+    ros::Rate loop_rate(3.0);
     while (ros::ok())
     {
         ros::spinOnce();
