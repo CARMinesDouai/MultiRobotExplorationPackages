@@ -122,8 +122,11 @@
     <param name="frontier_topic" value="phrontier_global"/>
   </node>
 
-    <node pkg="simple_exploration" type="simple_exploration" name="simple_exploration">
-    </node>
+    <node pkg="frontier_allocation" type="frontier_allocation" name="frontier_allocation" output="screen">
+      <param name="goal_tolerance" value="0.8"/>
+      <param name="frontier_tolerance" value="0.2"/>
+      <param name="random_frontier" value="false"/>
+    </node>  
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_merge)/launch/exploration.rviz"/>
 </launch>

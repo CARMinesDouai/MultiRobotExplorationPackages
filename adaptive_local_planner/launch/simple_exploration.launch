@@ -52,7 +52,7 @@
 
     <node pkg="frontier_allocation" type="frontier_allocation" name="frontier_allocation" output="screen">
       <param name="goal_tolerance" value="0.8"/>
-      <param name="frontier_tolerance" value="0.5"/>
+      <param name="frontier_tolerance" value="0.2"/>
       <param name="random_frontier" value="false"/>
     </node>  
   

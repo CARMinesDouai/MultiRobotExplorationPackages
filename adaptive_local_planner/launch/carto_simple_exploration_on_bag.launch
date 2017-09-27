@@ -5,7 +5,7 @@
     <arg name="configuration_basename" value="turtlebot_urg_lidar_2d.lua" />
     <param name ="use_sim_time" value="true"/> 
 
-    <node pkg="rosbag" type="play" name="player1" output="screen" args="--quiet --clock /home/mrsang/experiments/2017-09-19-11-27-29-single-robot-exploration.bag">
+    <node pkg="rosbag" type="play" name="player1" output="screen" args="--quiet --clock  /home/mrsang/experiments/2017-09-19-18-39-35.bag">
         <remap from="/submap_list" to = "/submap_list_1" />
         <remap from ="/imu" to = "imu_1" />
     </node>
