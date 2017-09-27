@@ -6,15 +6,22 @@
 #include <tf/transform_listener.h>
 #include <stdlib.h>
 
+
+typedef struct {
+    geometry_msgs::Point32 position;
+    int weight;
+} frontier_t;
+
 double goal_tolerance, frontier_tolerance;
 bool random_frontier;
 std::string map_frame, base_frame, goal_topic;
 sensor_msgs::PointCloud global_frontiers;
-geometry_msgs::Point32 frontier, old_frontier;
+frontier_t frontier, old_frontier;
 tf::TransformListener* listener;
 actionlib_msgs::GoalStatusArray global_status;
-std::vector<geometry_msgs::Point32> reached_frontiers;
+std::vector<frontier_t> reached_frontiers;
 template <class T1, class T2>
+
 double distance(T1 from, T2 to)
 {
     return sqrt(pow(to.x - from.x, 2) + pow(to.y - from.y, 2));
@@ -47,16 +54,23 @@ void status_callback(const actionlib_msgs::GoalStatusArray::ConstPtr &msg){
     global_status = *msg;
 }
 
-bool frontier_blacklisting( geometry_msgs::Point32 p)
+frontier_t frontier_blacklisting( geometry_msgs::Point32 p)
 {
-    std::vector<geometry_msgs::Point32>::iterator it;
+    frontier_t fr;
+    fr.weight = 0;
+    fr.position = p;
+    std::vector<frontier_t>::iterator it;
 
     for(it = reached_frontiers.begin(); it != reached_frontiers.end(); it++)
     {
-        double dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(*it, p);
-        if(dist < goal_tolerance) return false;
+        double dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(it->position, p);
+        if(dist < goal_tolerance)
+        {
+            fr.weight++;
+            return fr;
+        }
     }
-    return true;
+    return fr;
 }
 
 bool find_next_frontier()
@@ -69,7 +83,7 @@ bool find_next_frontier()
         return false;
     }
 
-    double dist = distance<geometry_msgs::Point,  geometry_msgs::Point32>(pose.position, frontier);
+    double dist = distance<geometry_msgs::Point,  geometry_msgs::Point32>(pose.position, frontier.position);
     if(dist > goal_tolerance)
     {   
         for (int i = 0; i < global_status.status_list.size(); i++)
@@ -79,6 +93,7 @@ bool find_next_frontier()
         }
 
     } else {
+        frontier.weight++;
         reached_frontiers.push_back(frontier);
     }
 
@@ -92,7 +107,8 @@ bool find_next_frontier()
     if(random_frontier )
     {
         old_frontier = frontier;
-        frontier = global_frontiers.points[ rand() % global_frontiers.points.size()];
+        frontier.weight=0;
+        frontier.position = global_frontiers.points[ rand() % global_frontiers.points.size()];
         return true;
     }
 
@@ -100,16 +116,21 @@ bool find_next_frontier()
     double mindist = 0, fr_dist;
     bool allocated = false;
     old_frontier = frontier;
+    frontier_t fr;
     for (int i = 0; i < global_frontiers.points.size(); i++)
     {
-        if(!frontier_blacklisting(global_frontiers.points[i])) continue;
         dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(pose.position, global_frontiers.points[i]);
-        fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, global_frontiers.points[i]);
-        if ( ( old_frontier.x == 0 && old_frontier.y == 0 ) ||( (mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance))
+        fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier.position, global_frontiers.points[i]);
+        if ( ( old_frontier.position.x == 0 && old_frontier.position.y == 0 ) ||( (mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance))
         {
-            frontier = global_frontiers.points[i];
-            mindist = dist;
-            allocated = true;
+            fr = frontier_blacklisting(global_frontiers.points[i]);
+            if(fr.weight <= frontier.weight)
+            {
+                frontier = fr;
+                mindist = dist;
+                allocated = true;
+            }
+            
         }
     }
 
@@ -143,8 +164,8 @@ int main(int argc, char**argv)
         {
             geometry_msgs::PoseStamped goal;
             goal.header.frame_id = map_frame;
-            goal.pose.position.x = frontier.x;
-            goal.pose.position.y = frontier.y;
+            goal.pose.position.x = frontier.position.x;
+            goal.pose.position.y = frontier.position.y;
         
             goal.pose.orientation.x = 0;
             goal.pose.orientation.y = 0;
