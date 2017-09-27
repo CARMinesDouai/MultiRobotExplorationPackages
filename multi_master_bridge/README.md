@@ -8,7 +8,7 @@ To exchange a ROS message one must define a helper to guild the protocol howto s
 
 ### Define a helper for a ROS message
 
-A bash script (*helper_gen.sh*) is available in the **src/helpers** folder allowing to generated the skeleton helper class for a ROS message. For example, if one want to define a helper for *geometry_msgs/Point*, just execute :
+A bash script (*helper_gen.sh*) is available in the **src/helpers** folder allowing to generate the skeleton helper class for a ROS message. For example, if one want to define a helper for *geometry_msgs/Point*, just execute :
 
 ```h
   cd src/helpers
