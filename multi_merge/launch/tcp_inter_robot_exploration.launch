@@ -24,7 +24,7 @@
     </node>
 
     <!-- GREEDY MERGING -->
-    <node pkg="multi_merge" type="greedy_merging" respawn="false" name="greedy_merging" output="screen" launch-prefix="">
+    <!--node pkg="multi_merge" type="greedy_merging" respawn="false" name="greedy_merging" output="screen" launch-prefix="">
         <param name="other_map" value="$(arg neighbor_map)"/>
         <param name="my_map" value="/local_map"/>
         <param name="merged_map_topic" value="$(arg global_map_topic)"/>
@@ -40,10 +40,10 @@
         <param name="th_value" value="60"/>
         <param name="map_in_topic" value="/pmap"/>
         <param name="map_out_topic" value="/local_map"/>
-    </node>
+    </node-->
 
     <!-- PROBABILISTIC MERGING -->
-    <!--node pkg="multi_merge" type="probabilistic_merging" respawn="false" name="probabilistic_merging"  launch-prefix="">
+    <node pkg="multi_merge" type="probabilistic_merging" respawn="false" name="probabilistic_merging"  launch-prefix="">
         <param name="other_map" value="$(arg neighbor_map)"/>
         <param name="my_map" value="/pmap"/>
         <param name="merged_map_topic" value="/global_map"/>
@@ -57,7 +57,7 @@
         <param name="th_value" value="60"/>
         <param name="map_in_topic" value="/global_map"/>
         <param name="map_out_topic" value="$(arg global_map_topic)"/>
-    </node-->
+    </node>
 
     <!--node pkg="pharos_probabilistic_merging" type="headless" respawn="false" name="pharos_probabilistic_merging" output="screen" args="pharos_probabilistic_mergingpackage_merging">
         <param name="other_map" value="$(arg neighbor_map)"/>

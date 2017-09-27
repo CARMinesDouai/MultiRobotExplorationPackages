@@ -27,7 +27,7 @@ void Consumer<T1,T2>::consume(ros::Publisher** pub,portal_data_t* pd)
     {
         ros::NodeHandle n;
         *pub = new ros::Publisher();
-        *(*pub) = n.advertise<T1>(pd->publish_to, 50,true);
+        *(*pub) = n.advertise<T1>(pd->publish_to, 1,true);
     }
     // consume data
     T2 helper;
