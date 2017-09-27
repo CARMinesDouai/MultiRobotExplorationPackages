@@ -128,5 +128,5 @@
       <param name="random_frontier" value="false"/>
     </node>  
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_merge)/launch/exploration.rviz"/>
+     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
 </launch>
