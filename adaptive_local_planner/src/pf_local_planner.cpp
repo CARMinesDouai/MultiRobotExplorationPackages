@@ -119,7 +119,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         cmd_vel.linear.z = 0.0;
         cmd_vel.angular.x = 0.0;
         cmd_vel.angular.y = 0.0; // ?
-        cmd_vel.angular.z = 1.2;
+        cmd_vel.angular.z = 1.0;
         return true;
     }
 

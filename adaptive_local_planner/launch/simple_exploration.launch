@@ -23,8 +23,8 @@
     <rosparam ns="costmap" subst_value="true">
       global_frame: /map
       robot_base_frame: /base_link
-      update_frequency: 0.2
-      publish_frequency: 0.2
+      update_frequency: 1.0
+      publish_frequency: 1.0
       rolling_window: false
       always_send_full_costmap: true
 
@@ -51,7 +51,7 @@
   </node>
 
     <node pkg="frontier_allocation" type="frontier_allocation" name="frontier_allocation" output="screen">
-      <param name="goal_tolerance" value="0.8"/>
+      <param name="goal_tolerance" value="0.5"/>
       <param name="frontier_tolerance" value="0.2"/>
       <param name="random_frontier" value="false"/>
     </node>  

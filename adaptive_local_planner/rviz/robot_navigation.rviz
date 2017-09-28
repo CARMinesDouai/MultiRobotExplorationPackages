@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud (bumpers)
+    SyncSource: ""
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -686,11 +686,11 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 45.452301
+      Scale: 89.7147903
       Target Frame: map
       Value: TopDownOrtho (rviz)
-      X: -0.493125856
-      Y: 3.30582929
+      X: -2.14366937
+      Y: -3.55220675
     Saved:
       - Angle: 0
         Class: rviz/TopDownOrtho

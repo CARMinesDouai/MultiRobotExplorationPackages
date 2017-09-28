@@ -7,7 +7,7 @@ PFLocalPlanner:
   attractive_gain: 0.65
   repulsive_gain: 0.03
   max_local_goal_dist: 0.5
-  min_obstacle_size_px: 5
+  min_obstacle_size_px: 10
   verbose: true
   local_map_th: 100
   max_linear_v: 0.4

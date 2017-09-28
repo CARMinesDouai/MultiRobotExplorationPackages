@@ -115,7 +115,9 @@ catkin_package(
 ## Build ##
 ###########
 
-add_executable(frontier_allocation src/frontier_allocation.cpp)
+add_executable(frontier_allocation 
+  #../adaptive_local_planner/src/simple_ccl.cpp
+  src/frontier_allocation.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
