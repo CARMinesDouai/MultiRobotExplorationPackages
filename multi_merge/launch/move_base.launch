@@ -5,7 +5,7 @@
 <include file="$(find multi_merge)/launch/includes/safety_controller.launch.xml"/>
 
 <node pkg="move_base" type="move_base" respawn="true" name="move_base" >
-    <remap from="base_scan" to="/scan"/>
+    <remap from="/base_scan" to="/scan"/>
     <!--remap from="cmd_vel" to="/mobile_base/commands/velocity"/-->
     <remap from="cmd_vel" to="navigation_velocity_smoother/raw_cmd_vel"/>
     

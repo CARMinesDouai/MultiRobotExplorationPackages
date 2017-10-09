@@ -21,4 +21,4 @@ generate messages on multi_master_bridge and torob_msgs:
 - > catkin_make torob_msgs_generate_messages
 
 Build the ohter packages:
-- > catkin_make
+- > catkin_make -DCMAKE_BUILD_TYPE=Debug

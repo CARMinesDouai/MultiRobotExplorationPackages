@@ -1,60 +1,37 @@
-#include <ros/ros.h>
-#include <geometry_msgs/Pose.h>
-#include <sensor_msgs/PointCloud.h>
-#include <nav_msgs/OccupancyGrid.h>
+
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib_msgs/GoalStatusArray.h>
-#include <tf/transform_listener.h>
-#include <stdlib.h>
-//#include "../../adaptive_local_planner/src/simple_ccl.h"
-
+#include <std_msgs/Bool.h>
+#include "common.h"
 double goal_tolerance, frontier_tolerance;
 bool random_frontier;
-std::string map_frame, base_frame, goal_topic;
-geometry_msgs::Point32 frontier, old_frontier;
+std::string map_frame, base_frame, goal_topic, pf_stat_topic, cmd_vel_topic;
+geometry_msgs::Point frontier, old_frontier;
 tf::TransformListener *listener;
 actionlib_msgs::GoalStatusArray global_status;
-std::vector<geometry_msgs::Point32> reached_frontiers;
-std::vector<geometry_msgs::Point32> global_frontiers;
-template <class T1, class T2>
-double distance(T1 from, T2 to)
-{
-    return sqrt(pow(to.x - from.x, 2) + pow(to.y - from.y, 2));
-}
+std::vector<geometry_msgs::Point> reached_frontiers;
+std::vector<geometry_msgs::Point> global_frontiers;
+bool local_status = false;
 
-bool my_pose(geometry_msgs::Pose *pose)
-{
-    tf::StampedTransform transform;
-    try
-    {
-        listener->lookupTransform(map_frame, base_frame, ros::Time(0), transform);
-    }
-    catch (tf::TransformException ex)
-    {
-        //ROS_ERROR("TF %s - %s: %s", map_frame.c_str(), base_frame.c_str(), ex.what());
-        return false;
-    }
-    pose->position.x = transform.getOrigin().getX();
-    pose->position.y = transform.getOrigin().getY();
-    pose->position.z = transform.getOrigin().getZ();
-    pose->orientation.x = transform.getRotation().getX();
-    pose->orientation.y = transform.getRotation().getY();
-    pose->orientation.z = transform.getRotation().getZ();
-    return true;
-}
+
 
 void status_callback(const actionlib_msgs::GoalStatusArray::ConstPtr &msg)
 {
     global_status = *msg;
 }
 
-bool frontier_blacklisting(geometry_msgs::Point32 p)
+void pf_status_callback(const std_msgs::Bool::ConstPtr &msg)
 {
-    std::vector<geometry_msgs::Point32>::iterator it;
+    local_status = msg->data;
+}
+
+bool frontier_blacklisting(geometry_msgs::Point p)
+{
+    std::vector<geometry_msgs::Point>::iterator it;
 
     for (it = reached_frontiers.begin(); it != reached_frontiers.end(); it++)
     {
-        double dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(*it, p);
+        double dist = distance<geometry_msgs::Point, geometry_msgs::Point>(*it, p);
         if (dist < goal_tolerance)
             return true;
     }
@@ -62,13 +39,13 @@ bool frontier_blacklisting(geometry_msgs::Point32 p)
 }
 
 
-void frontier_callback(const sensor_msgs::PointCloud::ConstPtr &msg)
+void frontier_callback(const geometry_msgs::PoseArray::ConstPtr &msg)
 {
     global_frontiers.clear();
-    for (int i = 0; i < msg->points.size(); i++)
+    for (int i = 0; i < msg->poses.size(); i++)
     {
-        if(!frontier_blacklisting(msg->points[i]))
-            global_frontiers.push_back(msg->points[i]);
+        if(!frontier_blacklisting(msg->poses[i].position))
+            global_frontiers.push_back(msg->poses[i].position);
     }
 }
 
@@ -86,30 +63,40 @@ bool find_next_frontier()
 {
 
     geometry_msgs::Pose pose;
-    if (!my_pose(&pose))
+    if (!my_pose(&pose, listener, map_frame, base_frame ))
     {
         //ROS_WARN("Cannot find my pose");
         return false;
     }
 
-    double dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(pose.position, frontier);
+    double dist = distance<geometry_msgs::Point, geometry_msgs::Point>(pose.position, frontier);
     if (dist > goal_tolerance)
     {
+        bool path_clear = false;
         for (int i = 0; i < global_status.status_list.size(); i++)
         {
             int stat = global_status.status_list[i].status;
-            if (stat == 1)
-                return false;
+            if (stat == 1 && local_status)
+                path_clear  = true;
+
+            if(stat == 4 || stat == 5) // fail
+            {
+                reached_frontiers.push_back(frontier);
+                path_clear = false;
+                break;
+            }
         }
+        if(path_clear) return false;
     }
     else if(frontier.x != 0 || frontier.y != 0)
     {
         reached_frontiers.push_back(frontier);
     }
-
+    local_status = true;
     if (global_frontiers.size() == 0)
     {
         ROS_WARN("No frontier to allocate at this time");
+        reached_frontiers.clear();
         return false;
     }
 
@@ -126,8 +113,8 @@ bool find_next_frontier()
     old_frontier = frontier;
     for (int i = 0; i < global_frontiers.size(); i++)
     {
-        dist = distance<geometry_msgs::Point, geometry_msgs::Point32>(pose.position, global_frontiers[i]);
-        fr_dist = distance<geometry_msgs::Point32, geometry_msgs::Point32>(old_frontier, global_frontiers[i]);
+        dist = distance<geometry_msgs::Point, geometry_msgs::Point>(pose.position, global_frontiers[i]);
+        fr_dist = distance<geometry_msgs::Point, geometry_msgs::Point>(old_frontier, global_frontiers[i]);
         if ((old_frontier.x == 0 && old_frontier.y == 0) || ((mindist == 0 || dist < mindist) && dist > goal_tolerance && fr_dist > frontier_tolerance))
         {
             frontier = global_frontiers[i];
@@ -150,14 +137,33 @@ int main(int argc, char **argv)
     private_nh.param<std::string>("map_frame", map_frame, "map");
     private_nh.param<std::string>("base_frame", base_frame, "base_link");
     private_nh.param<std::string>("goal_topic", goal_topic, "/move_base_simple/goal");
+    private_nh.param<std::string>("pf_status", pf_stat_topic, "/move_base/PFLocalPlanner/pf_status" );
+    private_nh.param<std::string>("cmd_vel_topic", cmd_vel_topic, "/cmd_vel");
 
-    ros::Subscriber sub_ph = private_nh.subscribe<sensor_msgs::PointCloud>("/phrontier_global", 10, &frontier_callback);
+    ros::Subscriber sub_ph = private_nh.subscribe<geometry_msgs::PoseArray>("/frontiers", 10, &frontier_callback);
     ros::Publisher pub_goal = private_nh.advertise<geometry_msgs::PoseStamped>(goal_topic, 10);
     ros::Subscriber sub_status = private_nh.subscribe<actionlib_msgs::GoalStatusArray>("/move_base/status", 10, &status_callback);
+    ros::Publisher cmd_vel_pub = private_nh.advertise<geometry_msgs::Twist>(cmd_vel_topic, 10);
+    ros::Subscriber sub_pf_status = private_nh.subscribe<std_msgs::Bool>(pf_stat_topic, 1, &pf_status_callback);
 
     srand(time(NULL));
+    double rotation = 6.283;
+    ros::Rate loop_rate(1.0);
+    while(rotation > 0)
+    {
+        geometry_msgs::Twist cmd_vel;
+         // do a in place rotation
+        rotation -= 0.5;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.linear.z = 0.0;
+        cmd_vel.angular.x = 0.0;
+        cmd_vel.angular.y = 0.0; // ?
+        cmd_vel.angular.z = 1.0;
+        cmd_vel_pub.publish(cmd_vel);
+        loop_rate.sleep();
+    }
 
-    ros::Rate loop_rate(3.0);
     while (ros::ok())
     {
         ros::spinOnce();
@@ -167,7 +173,7 @@ int main(int argc, char **argv)
             goal.header.frame_id = map_frame;
             goal.pose.position.x = frontier.x;
             goal.pose.position.y = frontier.y;
-            ROS_ERROR("Frontier %f %f", frontier.x, frontier.y);
+            //ROS_ERROR("Frontier %f %f", frontier.x, frontier.y);
             goal.pose.orientation.x = 0;
             goal.pose.orientation.y = 0;
             goal.pose.orientation.z = 0;

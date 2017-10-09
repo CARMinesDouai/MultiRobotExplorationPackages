@@ -116,8 +116,11 @@ catkin_package(
 ###########
 
 add_executable(frontier_allocation 
-  #../adaptive_local_planner/src/simple_ccl.cpp
   src/frontier_allocation.cpp)
+
+add_executable(frontier_detection 
+  ../adaptive_local_planner/src/simple_ccl.cpp
+  src/frontier_detection.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -127,7 +130,9 @@ add_executable(frontier_allocation
  target_link_libraries(frontier_allocation
    ${catkin_LIBRARIES}
  )
-
+target_link_libraries(frontier_detection
+   ${catkin_LIBRARIES}
+ )
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(

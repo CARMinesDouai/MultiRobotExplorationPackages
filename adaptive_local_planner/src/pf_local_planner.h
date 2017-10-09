@@ -32,6 +32,7 @@ SOFTWARE.
 #include <base_local_planner/costmap_model.h>
 #include <geometry_msgs/PoseArray.h>
 #include <actionlib_msgs/GoalStatusArray.h>
+#include <std_msgs/Bool.h>
 #include "3rd/map_builder.h"
 #include "simple_ccl.h"
 namespace local_planner
@@ -86,7 +87,7 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     double get_angle(geometry_msgs::Point, geometry_msgs::Point, geometry_msgs::Point);
     map<int,geometry_msgs::Point> cc_min_dist_to_robot(tf::StampedTransform localToCmd, geometry_msgs::PoseStamped pose);
 
-    double robot_radius,map_resolution,recovery_amplification, rotation;
+    double robot_radius,map_resolution,recovery_amplification; //, rotation;
     int min_obstacle_size_px, local_map_th, recovery_attemps, fw, fh;
     std::string goal_frame_id;
     std::string cmd_frame_id, scan_topic;
@@ -96,7 +97,7 @@ class PFLocalPlanner : public nav_core::BaseLocalPlanner
     bool reached;
     tf::TransformListener *tf;
     ros::NodeHandle private_nh;
-    ros::Publisher  local_goal_pub, obstacles_pub, futur_pose_pub, local_map_pub;
+    ros::Publisher  local_goal_pub, obstacles_pub, futur_pose_pub, local_map_pub, pf_status_pub;
     nav_msgs::OccupancyGrid local_map;
     actionlib_msgs::GoalStatusArray global_status;
     local_map::MapBuilder *map_builder;

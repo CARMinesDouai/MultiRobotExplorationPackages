@@ -40,6 +40,8 @@ typedef struct
     int parent;
     int rank;
     int cnt;
+    int mass_x;
+    int mass_y;
 }subset_t;
 
 class SimpleCCL {
@@ -49,16 +51,17 @@ public:
     void setMap(nav_msgs::OccupancyGrid map);
     void print();
     int dw, dh;
-    vector<int8_t>data;
+    vector<int>data;
     set<int> labels;
     vector<subset_t> labels_tree;
     int8_t th;
 private:
-    void ccl(nav_msgs::OccupancyGrid map);
-    vector<cell_t> neighbors_of(cell_t curr, nav_msgs::OccupancyGrid map, bool);
+    void ccl(nav_msgs::OccupancyGrid* map);
+    vector<cell_t> neighbors_of(cell_t curr, nav_msgs::OccupancyGrid* map, bool);
     int label_find(int);
     void label_union(int, int);
     int min_label_of(vector<cell_t>);
+    //int max_label;
 
 };
 

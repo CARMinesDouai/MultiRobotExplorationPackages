@@ -23,7 +23,7 @@ SOFTWARE.
 
 SimpleCCL::SimpleCCL()
 {
-
+    //max_label = 0;
 }
 SimpleCCL::~SimpleCCL()
 {
@@ -33,12 +33,13 @@ void SimpleCCL::setMap(nav_msgs::OccupancyGrid map)
 {
     dw = map.info.width;
     dh = map.info.height;
+    data.clear();
     data.resize(dw*dh,-1);
-    fill(data.begin(),data.end(),-1);
-    this->ccl(map);
+    //fill(data.begin(),data.end(),-1);
+    this->ccl(&map);
 }
 
-void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
+void SimpleCCL::ccl(nav_msgs::OccupancyGrid* map)
 {
     int i,j,idx, label=0;
     int8_t cell;
@@ -49,7 +50,7 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
         for(j = 0; j< dw; j++)
         {
             idx = i*dw + j;
-            cell = map.data[idx];
+            cell = map->data[idx];
             if(cell  >= th) // object
             {
                 neighbors = this->neighbors_of((cell_t){j,i,0,cell} ,map, true);
@@ -59,11 +60,14 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
                     data[idx] = label;
                     // new label subset
                     subset_t lbs;
+                    lbs.parent = label;
+                    lbs.rank = 0;
+                    lbs.cnt = 0;
+                    lbs.mass_x = 0;
+                    lbs.mass_y = 0;
                     labels_tree.push_back(lbs);
-                    labels_tree[label].parent = label;
-                    labels_tree[label].rank = 0;
-                    labels_tree[label].cnt = 0;
                     label++;
+                    //max_label = label;
                 }
                 else 
                 {
@@ -83,9 +87,10 @@ void SimpleCCL::ccl(nav_msgs::OccupancyGrid map)
         {
             idx = i*dw + j;
             if(data[idx] == -1) continue; 
-
             int l = this->label_find(data[idx]);
             labels_tree[l].cnt++;
+            labels_tree[l].mass_x += j;
+            labels_tree[l].mass_y += i;
             data[idx] = l;
             labels.insert(l);
         }
@@ -103,33 +108,33 @@ int SimpleCCL::min_label_of(vector<cell_t> neighbors)
     return minv;
 }
 
-vector<cell_t> SimpleCCL::neighbors_of(cell_t curr, nav_msgs::OccupancyGrid map, bool first)
+vector<cell_t> SimpleCCL::neighbors_of(cell_t curr, nav_msgs::OccupancyGrid* map, bool first)
 {
     vector<cell_t> neighbors;
-    if(curr.x != 0 && map.data[curr.x - 1 + curr.y*dw]>= th) // x-1, y
+    if(curr.x != 0 && map->data[curr.x - 1 + curr.y*dw]>= th) // x-1, y
         neighbors.push_back((cell_t){curr.x - 1, curr.y, data[curr.x-1 + curr.y*dw],curr.value });
 
-    if(curr.y != 0 && map.data[curr.x  + (curr.y-1)*dw]>= th) // x, y - 1
+    if(curr.y != 0 && map->data[curr.x  + (curr.y-1)*dw]>= th) // x, y - 1
         neighbors.push_back((cell_t){curr.x , curr.y-1, data[curr.x + (curr.y-1)*dw], curr.value});
 
-    if(curr.x != 0 && curr.y != 0 && map.data[curr.x - 1 + (curr.y-1)*dw]>= th) // x - 1, y - 1
+    if(curr.x != 0 && curr.y != 0 && map->data[curr.x - 1 + (curr.y-1)*dw]>= th) // x - 1, y - 1
         neighbors.push_back((cell_t){curr.x - 1, curr.y-1, data[curr.x-1 + (curr.y-1)*dw], curr.value });
 
-    if(curr.x != dw - 1 && curr.y != 0 && map.data[curr.x + 1 + (curr.y-1)*dw]>= th) // x+1, y - 1
+    if(curr.x != dw - 1 && curr.y != 0 && map->data[curr.x + 1 + (curr.y-1)*dw]>= th) // x+1, y - 1
         neighbors.push_back((cell_t){curr.x + 1, curr.y-1, data[curr.x+1 + (curr.y-1)*dw],curr.value });
     
     if(first) return neighbors;
     // this is for second pass
-    if(curr.x != dw - 1 && map.data[curr.x + 1 + (curr.y)*dw]>= th) // x+1 , y
+    if(curr.x != dw - 1 && map->data[curr.x + 1 + (curr.y)*dw]>= th) // x+1 , y
         neighbors.push_back((cell_t){curr.x + 1, curr.y, data[curr.x+1 + curr.y*dw],curr.value });
 
-    if(curr.x !=0 && curr.y != dh - 1 && map.data[curr.x - 1 + (curr.y+1)*dw]>= th) // x - 1, y + 1
+    if(curr.x !=0 && curr.y != dh - 1 && map->data[curr.x - 1 + (curr.y+1)*dw]>= th) // x - 1, y + 1
         neighbors.push_back((cell_t){curr.x - 1, curr.y+1, data[curr.x-1 + (curr.y+1)*dw],curr.value });
 
-    if( curr.y != dh - 1 && map.data[curr.x  + (curr.y+1)*dw]>= th) // y + 1, x
+    if( curr.y != dh - 1 && map->data[curr.x  + (curr.y+1)*dw]>= th) // y + 1, x
         neighbors.push_back((cell_t){curr.x , curr.y+1, data[curr.x + (curr.y+1)*dw],curr.value });
 
-    if(curr.x != dw - 1 && curr.y != dh - 1 && map.data[curr.x + 1 + (curr.y+1)*dw]>= th) // x+1 , y +1
+    if(curr.x != dw - 1 && curr.y != dh - 1 && map->data[curr.x + 1 + (curr.y+1)*dw]>= th) // x+1 , y +1
         neighbors.push_back((cell_t){curr.x + 1, curr.y+1, data[curr.x+1 + (curr.y+1)*dw],curr.value });
     return neighbors;
 }
@@ -172,6 +177,7 @@ void SimpleCCL::label_union(int x, int y)
 }
 int SimpleCCL::label_find(int x)
 {
+    //printf("\tFind label %d\n", x);
     // find root and make root as parent of x (path compression)
     if (labels_tree[x].parent != x)
         labels_tree[x].parent = this->label_find(labels_tree[x].parent);

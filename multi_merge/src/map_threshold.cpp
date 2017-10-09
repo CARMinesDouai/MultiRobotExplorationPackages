@@ -38,8 +38,17 @@ void map_threshold(const nav_msgs::OccupancyGrid::ConstPtr& msg)
     th_map.data.resize(w*h,-1);
     std::fill(th_map.data.begin(), th_map.data.end(), -1);
     for(int i= 0;i < w*h ; i++)
-            if(msg->data[i] != -1)
-                th_map.data[i] = msg->data[i] > th_value_?100:0;
+            if(msg->data[i] > -1)
+            {
+                if(msg->data[i] > th_value_)
+                    th_map.data[i] = 100;
+                else if(msg->data[i] <= 20)
+                    th_map.data[i] = 0;
+                else  
+                    th_map.data[i] = -1;
+            } 
+            else 
+                th_map.data[i] = -1;
        
     map_pub.publish(th_map);
 }

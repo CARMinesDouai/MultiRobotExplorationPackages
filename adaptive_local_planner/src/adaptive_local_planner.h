@@ -31,7 +31,6 @@ SOFTWARE.
 #include <angles/angles.h>
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
-
 #include "rosvmap.h"
 
 using namespace std;

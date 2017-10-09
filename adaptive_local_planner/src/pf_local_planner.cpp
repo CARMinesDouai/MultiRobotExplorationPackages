@@ -110,7 +110,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         return false;
     }
 
-    if(rotation > 0)
+    /*if(rotation > 0)
     {
         // do a in place rotation
         rotation -= 0.2;
@@ -121,7 +121,7 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         cmd_vel.angular.y = 0.0; // ?
         cmd_vel.angular.z = 1.0;
         return true;
-    }
+    }*/
 
     geometry_msgs::PoseStamped goal;
     if (!this->select_goal(&goal))
@@ -226,7 +226,8 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
 
     int attemp = recovery_attemps;
     bool is_collision = true;
-    double yaw, future_d, theta;
+    double org_yaw,yaw, future_d, theta;
+    org_yaw = atan2(cmd.y(), cmd.x()) - tf::getYaw(pose.pose.orientation);
     //this->adjust_velocity(&cmd);
     while(attemp != 0 && is_collision)
     {
@@ -256,26 +257,35 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
         }
         attemp--;
     }
+
+    if(fabs(yaw - org_yaw)  > M_PI/3.0)
+    {
+        ROS_ERROR("GOING WRONG WAY");
+        is_collision = true;
+    }
+
     this->adjust_velocity(&cmd);
 
     cmd_vel.linear.z = 0.0;
     cmd_vel.angular.x = 0.0;
     cmd_vel.angular.y = 0.0; // ?
     cmd_vel.angular.z = yaw;
+    std_msgs::Bool fb;
     if(is_collision )
     {
         ROS_WARN("There will be a collision if i take this direction. I stop");
+        fb.data = false;
         cmd_vel.linear.x = 0.0;
         cmd_vel.linear.y = 0.0;
     }
     else 
     {
-        
+        fb.data = true;
         cmd_vel.linear.x = cmd.x();
         cmd_vel.linear.y = cmd.y();
         // check if v is so big
     }
-    
+    pf_status_pub.publish(fb);
     if(verbose)
         ROS_INFO("CMD VEL: x:%f y:%f w:%f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
@@ -419,11 +429,13 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
     if (!initialized_)
     {
         double dw, dh;
+        std::string status_topic;
         ROS_INFO("Initialize adaptive local planner %s", name.c_str());
         private_nh = ros::NodeHandle(std::string("~") + "/" + name);
         private_nh.param<double>("robot_radius", this->robot_radius, 0.3f);
         private_nh.param<std::string>("goal_frame_id", this->goal_frame_id, "map");
-        private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link");
+        private_nh.param<std::string>("cmd_frame_id", this->cmd_frame_id, "base_link"); 
+        private_nh.param<std::string>("status_topic", status_topic, "pf_status");
         //private_nh.param<std::string>("local_map_topic", this->local_map_topic, "/move_base/local_costmap/costmap");
         private_nh.param<double>("attractive_gain", this->attractive_gain, 1.0);
         private_nh.param<double>("repulsive_gain", this->repulsive_gain, 1.0);
@@ -449,7 +461,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         futur_pose_pub = private_nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1, true);
         obstacles_pub = private_nh.advertise<geometry_msgs::PoseArray>("/obstacles", 1, true);
         local_map_pub = private_nh.advertise<nav_msgs::OccupancyGrid>("/pf_local_map",1,true);
-
+        pf_status_pub =  private_nh.advertise<std_msgs::Bool>(status_topic,1,true);
         this->tf = tf;
         
         cmap_sub = private_nh.subscribe<sensor_msgs::LaserScan>(this->scan_topic, 10,
@@ -460,7 +472,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
                 this->local_map_pub.publish(this->local_map);
            });
         initialized_ = true;
-        rotation = 2*M_PI;
+        //rotation = 2*M_PI;
     }
     else
     {
