@@ -1,7 +1,8 @@
 <launch>
   
-  <!--arg name="use_sim_time" value="true"/-->
+   <arg name="world" />
 
+  <param name="/use_sim_time" value="true" />
   <arg name="configuration_basename" value="turtlebot_urg_lidar_2d.lua" />
 
   <param name="robot_description" command="cat $(find gazebo_sim)/launch/includes/turtlebot.urdf"/>
@@ -12,45 +13,33 @@
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
 
-   <!--node pkg="tf" type="static_transform_publisher" name="imu_broadcaster" args="0.0 0 0.0 0 0 0 1 base_link gyro_link 100" /-->
-
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
+  <!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node-->
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find gazebo_sim)/launch/includes/indoor.world"/> <!-- worlds/willowgarage.world Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+    <arg name="world_name" value="$(find gazebo_sim)/launch/includes/$(arg world).world"/> <!-- worlds/willowgarage.world Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
     <arg name="headless" value="false"/> <!-- Inert - see gazebo_ros_pkgs issue #491 -->
     <arg name="recording" value="false"/>
     <arg name="debug" value="false"/>
+    <remap from="/tf" to="/gazebo_tf"/>
   </include>
-
-  <node pkg="gmapping" type="slam_gmapping" name="gmapping_node" args="scan:=scan" >
-
-      <param name="maxUrange" value="10.0"/>
-      <param name="delta" value="0.05"/>
-      <param name="xmin" value="-3.0"/>
-      <param name="ymin" value="-3.0"/>
-      <param name="xmax" value="3.0"/>
-      <param name="ymax" value="3.0"/>
-      <param name="map_update_interval" value="2.0"/>
-      <param name="temporalUpdate" value="2.0"/>
-   </node>
-  
-  <!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.110 0 0.02478 0 0 0 1 base_link laser 50" /-->
+      
     
-    <!--node name="cartographer_node" pkg="cartographer_ros"
+
+  <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory
-              $(find turtlebot_morse)/launch/includes
-          -configuration_basename $(arg configuration_basename)">
-    <remap from="points2" to="/camera/depth/points" />
+              $(find gazebo_sim)/launch/includes
+          -configuration_basename turtlebot_urg_lidar_2d.lua"
+      output="screen">
+    <!--remap from="scan" to="/laser_scan" /-->
   </node>
 
   <node name="flat_world_imu_node" pkg="cartographer_turtlebot"
-      type="cartographer_flat_world_imu_node" >
-    <remap from="imu_in" to="/mobile_base/sensors/imu_data" />
+      type="cartographer_flat_world_imu_node" output="screen">
+    <remap from="imu_in" to="/mobile_base/sensors/imu_data_raw" />
     <remap from="imu_out" to="/imu" />
   </node>
 
@@ -60,10 +49,10 @@
 	</node>
 
     <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
-        <param name="th_value" value="50"/>
+        <param name="th_value" value="55"/>
         <param name="map_in_topic" value="/pmap"/>
         <param name="map_out_topic" value="/map"/>
-  </node-->
+  </node>
 
   <include file="$(find gazebo_sim)/launch/includes/move_base.launch.xml" />
   
@@ -92,11 +81,7 @@
 
     </rosparam>
   </node>
-  
-  <!--node pkg="phrontier_exploration" type="headless" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
-    <param name="map_topic" value="/costmap_for_exploration_global/costmap/costmap"/>
-    <param name="frontier_topic" value="phrontier_global"/>
-  </node-->
+
 
   <node pkg="frontier_allocation" type="frontier_detection" name="frontier_detection" output="screen">
       <param name="map" value="/costmap_for_exploration_global/costmap/costmap"/>
@@ -110,5 +95,5 @@
       <param name="cmd_vel_topic" value="/mobile_base/commands/velocity"/>
     </node>  
   
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_sim)/launch/includes/carto_view.rviz"/>
 </launch>

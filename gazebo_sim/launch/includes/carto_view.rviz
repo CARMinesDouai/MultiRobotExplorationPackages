@@ -265,12 +265,12 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /pmap
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Alpha: 0.699999988
@@ -574,23 +574,32 @@ Visualization Manager:
       Use Timestamp: false
       Value: false
     - Class: Submaps
-      Enabled: false
+      Enabled: true
       Name: Submaps
       Submap query service: /submap_query
       Submaps:
         All Enabled: true
+        Trajectory 0:
+          0.180: true
+          1.180: true
+          2.133: true
+          3.43: true
+          Value: true
       Topic: /submap_list
       Tracking frame: base_link
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /constraint_list
       Name: MarkerArray
       Namespaces:
-        {}
+        Inter constraints: true
+        Inter residuals: true
+        Intra constraints: true
+        Intra residuals: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /trajectory_node_list
