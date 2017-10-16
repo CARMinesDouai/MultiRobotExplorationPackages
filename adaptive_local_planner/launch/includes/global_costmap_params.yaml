@@ -7,3 +7,4 @@ global_costmap:
   rolling_window: false
   inflation_radius: 0.35
   robot_radius: 0.25
+  track_unknown_space: true
