@@ -17,7 +17,7 @@
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find gazebo_sim)/launch/includes/$(arg world).world"/> <!-- worlds/willowgarage.world Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+    <arg name="world_name" value="$(find gazebo_sim)/launch/includes/worlds/$(arg world).world"/> <!-- worlds/willowgarage.world Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
@@ -67,7 +67,7 @@
 
   <include file="$(find gazebo_sim)/launch/includes/move_base.launch.xml" />
   
-  <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_for_exploration_global">
+  <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_for_exploration_global" respawn="true" >
     
     <rosparam ns="costmap" subst_value="true">
       global_frame: /map
