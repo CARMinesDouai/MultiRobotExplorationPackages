@@ -23,7 +23,7 @@
     <arg name="headless" value="false"/> <!-- Inert - see gazebo_ros_pkgs issue #491 -->
     <arg name="recording" value="false"/>
     <arg name="debug" value="false"/>
-    <remap from="/tf" to="/gazebo_tf"/>
+    <!--remap from="/tf" to="/gazebo_tf"/-->
   </include>
       
     

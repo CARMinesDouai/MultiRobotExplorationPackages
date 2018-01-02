@@ -281,8 +281,16 @@ bool PFLocalPlanner::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
     else 
     {
         fb.data = true;
-        cmd_vel.linear.x = cmd.x();
-        cmd_vel.linear.y = cmd.y();
+        if(fabs(yaw) > max_angular_v)
+        {
+            cmd_vel.angular.z = (yaw/(fabs(yaw)))*max_angular_v;
+        }
+        else
+        {
+            cmd_vel.linear.x = cmd.x();
+            cmd_vel.linear.y = cmd.y();
+        }
+        
         // check if v is so big
     }
     pf_status_pub.publish(fb);
@@ -448,6 +456,7 @@ void PFLocalPlanner::initialize(std::string name, tf::TransformListener *tf, cos
         private_nh.param<int>("recovery_attemps", recovery_attemps, 10);
         private_nh.param<double>("goal_tolerance", goal_tolerance, 0.2);
         private_nh.param<double>("max_linear_v", max_linear_v, 0.3);
+        private_nh.param<double>("max_angular_v", max_angular_v, 1.3);
         private_nh.param<double>("recovery_amplification", recovery_amplification, 2.0);
         private_nh.param<double>("field_w", dw, 4.0);
         private_nh.param<double>("field_h", dh, 4.0);

@@ -2,7 +2,6 @@
   <arg name="world" />
   <param name="use_sim_time" value="true"/>
 
-  <arg name="configuration_basename" value="turtlebot_urg_lidar_2d.lua" />
 
   <param name="robot_description" command="cat $(find gazebo_sim)/launch/includes/turtlebot.urdf"/>
 
@@ -28,7 +27,7 @@
 
   <node pkg="gmapping" type="slam_gmapping" name="gmapping_node" args="scan:=scan" >
 
-      <param name="maxUrange" value="10.0"/>
+      <param name="maxUrange" value="13.0"/>
       <param name="delta" value="0.05"/>
       <param name="xmin" value="-3.0"/>
       <param name="ymin" value="-3.0"/>
@@ -111,4 +110,7 @@
     </node>  
   
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
+
+    <!-- Tracking the cpu load and memory load -->
+    <node name="rst_tracking" pkg="gazebo_sim" type="rsload.sh" args="slam_gmapping" respawn="true" />
 </launch>
