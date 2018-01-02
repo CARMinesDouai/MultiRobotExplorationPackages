@@ -96,4 +96,6 @@
     </node>  
   
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_sim)/launch/includes/carto_view.rviz"/>
+      <node name="rst_tracking" pkg="gazebo_sim" type="rsload.sh" args="cartographer_n" respawn="true" />
+
 </launch>

@@ -107,4 +107,6 @@
     </node>  
   
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
+      <node name="rst_tracking" pkg="gazebo_sim" type="rsload.sh" args="slam_karto" respawn="true" />
+
 </launch>
