@@ -61,16 +61,17 @@
     </rosparam>
   </node>
   
-  <node pkg="phrontier_exploration" type="headless" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
-    <param name="map_topic" value="/costmap_for_exploration_global/costmap/costmap"/>
-    <param name="frontier_topic" value="phrontier_global"/>
-  </node>
+  <node pkg="frontier_allocation" type="frontier_detection" name="frontier_detection" output="screen">
+      <param name="map" value="/costmap_for_exploration_global/costmap/costmap"/>
+      <param name="min_frontier_size_px" value="10"/>
+    </node>
 
     <node pkg="frontier_allocation" type="frontier_allocation" name="frontier_allocation" output="screen">
       <param name="goal_tolerance" value="0.5"/>
-      <param name="frontier_tolerance" value="0.2"/>
+      <param name="frontier_tolerance" value="0.05"/>
       <param name="random_frontier" value="false"/>
-    </node>  
+      <param name="cmd_vel_topic" value="/mobile_base/commands/velocity"/>
+    </node>
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
 
