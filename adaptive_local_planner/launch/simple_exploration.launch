@@ -11,11 +11,11 @@
   </node>
 
   <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.110 0 0.02478 0 0 0 1 base_link laser 50" />
-  
+
 <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory
-              $(find adaptive_local_planner)/launch/
+              $(find cartographer_turtlebot)/configuration_files
           -configuration_basename turtlebot_urg_lidar_2d.lua"
       output="screen">
     <!--remap from="scan" to="/laser_scan" /-->
