@@ -1,7 +1,6 @@
 
 
 <launch>
-  <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
 
   <include file="$(find adaptive_local_planner)/launch/includes/move_base.launch.xml" />
 

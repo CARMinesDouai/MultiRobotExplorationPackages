@@ -1,7 +1,37 @@
 <launch>
-  <include file="$(find multi_merge)/launch/cartographer_minimal.launch" />
+
+    <param name="urg_node/frame_id" value="plate_top_link" />
+    <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
 
   <include file="$(find adaptive_local_planner)/launch/includes/move_base.launch.xml" />
+
+<node name="urg_node" pkg="urg_node" type="urg_node" >
+   <param name="angle_min" value="-1.6"/>
+    <param name="angle_max" value="1.6"/>
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.110 0 0.02478 0 0 0 1 base_link laser 50" />
+  
+<node name="cartographer_node" pkg="cartographer_ros"
+      type="cartographer_node" args="
+          -configuration_directory
+              $(find adaptive_local_planner)/launch/
+          -configuration_basename turtlebot_urg_lidar_2d.lua"
+      output="screen">
+    <!--remap from="scan" to="/laser_scan" /-->
+  </node>
+
+  <node name="flat_world_imu_node" pkg="cartographer_turtlebot"
+      type="cartographer_flat_world_imu_node" output="screen">
+    <remap from="imu_in" to="/mobile_base/sensors/imu_data_raw" />
+    <remap from="imu_out" to="/imu" />
+  </node>
+
+  <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+      type="cartographer_occupancy_grid_node" args="-resolution 0.05" >
+      <remap from="/map" to="/pmap" />
+	</node>
+
  
  
   <node pkg="multi_merge" type="map_threshold" respawn="false" name="map_threshold" output="screen" launch-prefix="">
@@ -45,17 +75,18 @@
     </rosparam>
   </node>
   
-  <node pkg="phrontier_exploration" type="headless" name="exploration_global" args="phrontier_explorationpackage_extract_frontiers_bis">
-    <param name="map_topic" value="/costmap_for_exploration_global/costmap/costmap"/>
-    <param name="frontier_topic" value="phrontier_global"/>
-  </node>
+  <node pkg="frontier_allocation" type="frontier_detection" name="frontier_detection" output="screen">
+      <param name="map" value="/costmap_for_exploration_global/costmap/costmap"/>
+      <param name="min_frontier_size_px" value="10"/>
+    </node>
 
     <node pkg="frontier_allocation" type="frontier_allocation" name="frontier_allocation" output="screen">
       <param name="goal_tolerance" value="0.5"/>
-      <param name="frontier_tolerance" value="0.2"/>
+      <param name="frontier_tolerance" value="0.05"/>
       <param name="random_frontier" value="false"/>
-    </node>  
+      <param name="cmd_vel_topic" value="/mobile_base/commands/velocity"/>
+    </node>    
   
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find adaptive_local_planner)/rviz/robot_navigation.rviz"/>
-  <node name="rst_tracking" pkg="gazebo_sim" type="rsload.sh" args="cartographer_node" respawn="true" />
+  <!--node name="rst_tracking" pkg="gazebo_sim" type="rsload.sh" args="cartographer_node" respawn="true" /-->
 </launch>
