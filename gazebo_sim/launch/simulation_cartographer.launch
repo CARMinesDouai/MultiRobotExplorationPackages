@@ -31,7 +31,7 @@
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory
-              $(find gazebo_sim)/launch/includes
+               $(find cartographer_turtlebot)/configuration_files
           -configuration_basename turtlebot_urg_lidar_2d.lua"
       output="screen">
     <!--remap from="scan" to="/laser_scan" /-->

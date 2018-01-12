@@ -37,8 +37,8 @@ def nearest_error(groundtruth, slammap):
     #responses = np.random.randint(0,2,(25,1)).astype(np.float32)
 
     # plot Reds
-    x, y = sl_occupancies.T
-    plt.scatter(x,y)
+    #x, y = sl_occupancies.T
+    #plt.scatter(x,y)
     #red = sl_occupancies[gr_labels.ravel()==1]
     #plt.scatter(red[:,0],red[:,1],80,'r','^')
 
@@ -81,8 +81,8 @@ def nearest_error(groundtruth, slammap):
     sume = np.sum(dist)
     print "sum of error: ", sume, "\n"
     print "normalize error:", (sume/ncells), "\n"
-    plt.show()
-    cv2.waitKey(0)
+    #plt.show()
+    #cv2.waitKey(0)
 
 
 # using mean square error
