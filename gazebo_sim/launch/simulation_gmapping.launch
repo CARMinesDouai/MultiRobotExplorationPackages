@@ -27,7 +27,7 @@
 
   <node pkg="gmapping" type="slam_gmapping" name="gmapping_node" args="scan:=scan" >
 
-      <param name="maxUrange" value="13.0"/>
+      <param name="maxUrange" value="8.0"/>
       <param name="delta" value="0.05"/>
       <param name="xmin" value="-3.0"/>
       <param name="ymin" value="-3.0"/>

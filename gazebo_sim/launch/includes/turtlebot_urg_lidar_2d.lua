@@ -52,8 +52,8 @@ TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.1)
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = SUBMAP_SIZE
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 20.
 
-SPARSE_POSE_GRAPH.constraint_builder.min_score = 0.9
-SPARSE_POSE_GRAPH.constraint_builder.global_localization_min_score = 0.6
+SPARSE_POSE_GRAPH.constraint_builder.min_score = 0.8
+SPARSE_POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 SPARSE_POSE_GRAPH.constraint_builder.max_constraint_distance =3.
 SPARSE_POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(15.)
 SPARSE_POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 3.
