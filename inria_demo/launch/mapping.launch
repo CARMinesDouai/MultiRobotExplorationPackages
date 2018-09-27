@@ -1,0 +1,18 @@
+<launch>
+
+ <include file="$(find inria_demo)/launch/minimal.launch" />
+  <node pkg="slam_karto_g2o" type="slam_karto_g2o" name="slam_karto_g2o" output="screen">
+    <rosparam command="load" file="$(find slam_karto_g2o)/config/mapping_karto_g2o.yaml" />
+  </node>
+  <!--node pkg="gmapping" type="slam_gmapping" name="gmapping_node" >
+
+    <param name="maxUrange" value="4.0"/>
+    <param name="delta" value="0.05"/>
+    <param name="xmin" value="-1.0"/>
+    <param name="ymin" value="-1.0"/>
+    <param name="xmax" value="1.0"/>
+    <param name="ymax" value="1.0"/>
+    <param name="map_update_interval" value="5.0"/>
+    <param name="temporalUpdate" value="2.0"/>
+  </node-->
+</launch>

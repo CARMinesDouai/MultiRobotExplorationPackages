@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   nav_msgs
-  torob_msgs
   geometry_msgs
   sensor_msgs
   visualization_msgs
@@ -125,7 +124,7 @@ catkin_package(
 include_directories(
   # include
   ${catkin_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/../torob/src
+  #${PROJECT_SOURCE_DIR}/../torob/src
 )
 
 ## Declare a C++ library
@@ -143,13 +142,13 @@ add_library(adaptive_local_planner_lib
   src/simple_ccl.cpp
   src/pf_local_planner.cpp 
 
-  ../torob/src/data.cpp 
-  ../torob/src/float2.cpp
-  ../torob/src/impact.cpp
-  ../torob/src/ogmap.cpp
-  ../torob/src/rosvmap.cpp
-  ../torob/src/visimap.cpp
-  src/adaptive_local_planner.cpp
+  #../torob/src/data.cpp 
+  #../torob/src/float2.cpp
+  #../torob/src/impact.cpp
+  #../torob/src/ogmap.cpp
+  #../torob/src/rosvmap.cpp
+  #../torob/src/visimap.cpp
+  #src/adaptive_local_planner.cpp
 )
 target_link_libraries(adaptive_local_planner_lib yaml-cpp)
 

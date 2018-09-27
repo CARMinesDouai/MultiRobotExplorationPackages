@@ -119,7 +119,7 @@ add_executable(frontier_allocation
   src/frontier_allocation.cpp)
 
 add_executable(frontier_detection 
-  ../adaptive_local_planner/src/simple_ccl.cpp
+  src/simple_ccl.cpp
   src/frontier_detection.cpp)
 
 ## Add cmake target dependencies of the executable/library
