@@ -1,5 +1,5 @@
 # Demo use guide
-This document provides a detail setup guide for the demonstration.
+This document provides a detailled setup guide for the demonstration.
 
 Table of content:
 1.  [Hardware requirement](#hw)
@@ -185,7 +185,7 @@ ROS_MASTER_URI=http://10.1.160.200:11311 roslaunch inria_demo mapping.launch
 #ROS_MASTER_URI=http://ubiquityrobot:11311 roslaunch inria_demo mapping.launch
 ```
  
- While every thing is running, use the Xbox 360 controller to move the turtlebot around the environment to perform the mapping, [RVIZ](http://wiki.ros.org/rviz) can be used to view the map on the desktop.
+ While everything is running, use the Xbox 360 controller to move the turtlebot around the environment to perform the mapping, [RVIZ](http://wiki.ros.org/rviz) can be used to view the map on the desktop.
  When the mapping process finishes, run the following command on other terminal to save the map
  
  ```sh
